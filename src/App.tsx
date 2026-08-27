@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Layout, type TabId } from './components/Layout';
 import { ImportRuns } from './components/ImportRuns';
 import { TierLab } from './components/TierLab';
-import { UpgradeQueue } from './components/UpgradeQueue';
+import { ResearchQueue } from './components/ResearchQueue';
 import { CellBudget } from './components/CellBudget';
 import { BuildState } from './components/BuildState';
 import { TournamentHistory } from './components/TournamentHistory';
@@ -16,8 +16,8 @@ function App() {
         return <ImportRuns />;
       case 'tier-lab':
         return <TierLab />;
-      case 'upgrade-queue':
-        return <UpgradeQueue />;
+      case 'research-queue':
+        return <ResearchQueue />;
       case 'cell-budget':
         return <CellBudget />;
       case 'build-state':

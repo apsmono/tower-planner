@@ -1,18 +1,23 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useStore } from '../domain/store';
+import { TaskHUD } from './TaskHUD';
+import { AuthSyncBanner } from './AuthSyncBanner';
+import { AuthModal } from './AuthModal';
+import { ThemeToggle } from './ThemeToggle';
 import { 
   History, 
   FlaskConical, 
   ListOrdered, 
-  Coins, 
   Sliders, 
   Trophy, 
   AlertTriangle,
   Clock,
-  Zap
+  Zap,
+  Cloud,
+  CloudCheck
 } from 'lucide-react';
 
-export type TabId = 'runs' | 'tier-lab' | 'upgrade-queue' | 'cell-budget' | 'build-state' | 'tournament';
+export type TabId = 'runs' | 'tier-lab' | 'research-queue' | 'cell-budget' | 'build-state' | 'tournament';
 
 interface LayoutProps {
   activeTab: TabId;
@@ -23,6 +28,15 @@ interface LayoutProps {
 export function Layout({ activeTab, setActiveTab, children }: LayoutProps) {
   const build = useStore((state) => state.build);
   const runs = useStore((state) => state.runs);
+  const user = useStore((state) => state.user);
+
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalTab, setAuthModalTab] = useState<'signin' | 'register' | 'info'>('register');
+
+  const handleOpenAuth = (tab: 'signin' | 'register' | 'info' = 'register') => {
+    setAuthModalTab(tab);
+    setIsAuthModalOpen(true);
+  };
 
   // Suffix numbers helper
   const formatCompact = (num: number): string => {
@@ -36,7 +50,7 @@ export function Layout({ activeTab, setActiveTab, children }: LayoutProps) {
   const navItems = [
     { id: 'runs' as TabId, name: 'Import & Runs', icon: History, color: 'text-blue-400 hover:text-blue-300' },
     { id: 'tier-lab' as TabId, name: 'Tier Lab', icon: FlaskConical, color: 'text-indigo-400 hover:text-indigo-300' },
-    { id: 'upgrade-queue' as TabId, name: 'Upgrade Queue', icon: ListOrdered, color: 'text-emerald-400 hover:text-emerald-300' },
+    { id: 'research-queue' as TabId, name: 'Research Queue', icon: ListOrdered, color: 'text-emerald-400 hover:text-emerald-300' },
     { id: 'cell-budget' as TabId, name: 'Cell Budget', icon: Clock, color: 'text-amber-400 hover:text-amber-300' },
     { id: 'build-state' as TabId, name: 'Build State', icon: Sliders, color: 'text-rose-400 hover:text-rose-300' },
     { id: 'tournament' as TabId, name: 'Tournament', icon: Trophy, color: 'text-cyan-400 hover:text-cyan-300' },
@@ -46,21 +60,40 @@ export function Layout({ activeTab, setActiveTab, children }: LayoutProps) {
   const activeBoostsCount = build.labs.filter((l) => l.researchId).length;
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col md:flex-row">
+    <div className="min-h-screen md:h-screen md:overflow-hidden bg-zinc-950 text-zinc-100 flex flex-col md:flex-row">
       
       {/* Sidebar */}
-      <aside className="w-full md:w-64 bg-zinc-900/40 border-b md:border-b-0 md:border-r border-zinc-800/80 p-4 flex flex-col justify-between shrink-0 glass-panel">
+      <aside className="w-full md:w-64 bg-zinc-900/40 border-b md:border-b-0 md:border-r border-zinc-800/80 p-4 flex flex-col justify-between shrink-0 glass-panel md:h-full md:overflow-y-auto">
         <div>
           {/* Brand Header */}
-          <div className="flex items-center space-x-3 mb-8 px-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-              <Zap className="w-4 h-4 text-white animate-pulse" />
+          <div className="flex items-center justify-between mb-8 px-2">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                <Zap className="w-4 h-4 text-white animate-pulse" />
+              </div>
+              <div>
+                <h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent">
+                  Tower Planner
+                </h1>
+                <p className="text-[10px] text-zinc-500 font-mono">v1.0.0</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent">
-                Tower Planner
-              </h1>
-              <p className="text-[10px] text-zinc-500 font-mono">v1.0.0 (Local)</p>
+
+            {/* Quick Actions: Theme Selector & Cloud Sync */}
+            <div className="flex items-center space-x-1.5">
+              <ThemeToggle />
+
+              <button
+                onClick={() => handleOpenAuth(user?.isLoggedIn ? 'info' : 'register')}
+                className={`p-2 rounded-lg border transition-all cursor-pointer ${
+                  user?.isLoggedIn
+                    ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-400 hover:bg-emerald-900/50 shadow-sm shadow-emerald-500/20'
+                    : 'bg-indigo-950/40 border-indigo-500/30 text-indigo-400 hover:bg-indigo-900/50 hover:border-indigo-400/50'
+                }`}
+                title={user?.isLoggedIn ? `Cloud Synced as ${user.email}` : 'Sign in / Register to sync online'}
+              >
+                {user?.isLoggedIn ? <CloudCheck className="w-4 h-4" /> : <Cloud className="w-4 h-4" />}
+              </button>
             </div>
           </div>
 
@@ -93,10 +126,10 @@ export function Layout({ activeTab, setActiveTab, children }: LayoutProps) {
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
-                  className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                  className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium border transition-colors duration-100 touch-manipulation ${
                     isActive 
-                      ? 'bg-zinc-800 text-white border border-zinc-700 shadow-inner' 
-                      : 'text-zinc-400 hover:bg-zinc-900/50 hover:text-zinc-200'
+                      ? 'bg-zinc-800 text-white border-zinc-700 shadow-inner' 
+                      : 'border-transparent text-zinc-400 hover:bg-zinc-900/50 hover:text-zinc-200'
                   }`}
                 >
                   <Icon className={`w-4 h-4 ${item.color} ${isActive ? 'scale-110' : ''}`} />
@@ -108,7 +141,10 @@ export function Layout({ activeTab, setActiveTab, children }: LayoutProps) {
         </div>
 
         {/* Labs Status & Warning Banner */}
-        <div className="mt-8 space-y-3">
+        <div className="mt-8 space-y-4">
+          {/* Active Goals HUD */}
+          <TaskHUD />
+
           {/* Verification Warnings */}
           {build.verificationFlags.length > 0 && (
             <div className="flex items-start space-x-2 p-2.5 bg-rose-950/20 border border-rose-800/30 rounded-lg text-xs text-rose-300">
@@ -149,8 +185,16 @@ export function Layout({ activeTab, setActiveTab, children }: LayoutProps) {
 
       {/* Main Content Area */}
       <main className="flex-1 p-4 md:p-8 overflow-y-auto max-w-7xl">
+        <AuthSyncBanner onOpenAuth={handleOpenAuth} />
         {children}
       </main>
+
+      {/* Cloud Auth & Sync Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        initialTab={authModalTab}
+      />
     </div>
   );
 }
