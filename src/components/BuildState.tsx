@@ -489,7 +489,21 @@ export function BuildState() {
         const bhCooldown = bhUW?.upgrades?.stat3 ?? UW_CONFIGS.bh.stat3.defaultVal;
         const isGtBhSynced = gtUW?.unlocked && bhUW?.unlocked && gtCooldown === bhCooldown;
 
-        const filteredUWs = build.ultimateWeapons.filter(u => {
+        // Calculate stone metrics
+        const stonesSpentOnUnlocks = UW_POWER_STONE_MILESTONES
+          .filter(m => m.index <= unlockedCount)
+          .reduce((sum, m) => sum + m.rawCost, 0);
+        const currentStones = build.resources.stones || 0;
+        const totalAcquiredStones = stonesSpentOnUnlocks + currentStones;
+
+        // Sort acquired UWs always at top
+        const sortedUWs = [...build.ultimateWeapons].sort((a, b) => {
+          if (a.unlocked && !b.unlocked) return -1;
+          if (!a.unlocked && b.unlocked) return 1;
+          return 0;
+        });
+
+        const filteredUWs = sortedUWs.filter(u => {
           if (uwFilter === 'acquired') return u.unlocked;
           if (uwFilter === 'locked') return !u.unlocked;
           return true;
@@ -584,6 +598,60 @@ export function BuildState() {
                 >
                   Locked ({build.ultimateWeapons.length - unlockedCount})
                 </button>
+              </div>
+            </div>
+
+            {/* Power Stone Economy Summary Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 font-mono">
+              <div className="p-3.5 bg-zinc-900/60 border border-zinc-800 rounded-xl flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] text-zinc-400 uppercase tracking-wider block font-semibold">
+                    Stones Total Spent
+                  </span>
+                  <span className="text-base sm:text-lg font-bold text-amber-400">
+                    {stonesSpentOnUnlocks.toLocaleString()}
+                  </span>
+                  <span className="text-[10px] text-zinc-500 block font-sans">
+                    on {unlockedCount} UW unlocks
+                  </span>
+                </div>
+                <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400">
+                  <Database className="w-5 h-5" />
+                </div>
+              </div>
+
+              <div className="p-3.5 bg-zinc-900/60 border border-zinc-800 rounded-xl flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] text-zinc-400 uppercase tracking-wider block font-semibold">
+                    Stones Rest (Inventory)
+                  </span>
+                  <span className="text-base sm:text-lg font-bold text-teal-400">
+                    {currentStones.toLocaleString()}
+                  </span>
+                  <span className="text-[10px] text-zinc-500 block font-sans">
+                    available balance
+                  </span>
+                </div>
+                <div className="p-2 rounded-lg bg-teal-500/10 border border-teal-500/20 text-teal-400">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+              </div>
+
+              <div className="p-3.5 bg-zinc-900/60 border border-zinc-800 rounded-xl flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] text-zinc-400 uppercase tracking-wider block font-semibold">
+                    Total Acquired Stones
+                  </span>
+                  <span className="text-base sm:text-lg font-bold text-emerald-400">
+                    {totalAcquiredStones.toLocaleString()}
+                  </span>
+                  <span className="text-[10px] text-zinc-500 block font-sans">
+                    lifetime stones earned
+                  </span>
+                </div>
+                <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
               </div>
             </div>
 
@@ -804,12 +872,12 @@ export function BuildState() {
                     {/* Strategy 2: Stone Economy */}
                     <div className="p-4 bg-zinc-900/50 border border-zinc-800 rounded-lg space-y-2.5">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2 text-amber-400 font-semibold">
+                        <div className="flex items-center space-x-2 text-emerald-400 font-semibold">
                           <Database className="w-4 h-4" />
                           <span>Power Stone Milestone Costs</span>
                         </div>
                         {unlockedCount < 9 ? (
-                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/30 text-amber-300 font-semibold">
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 font-semibold">
                             Next ({UW_POWER_STONE_MILESTONES[unlockedCount]?.label}): {UW_POWER_STONE_MILESTONES[unlockedCount]?.rawCost.toLocaleString()} stones
                           </span>
                         ) : (
@@ -830,7 +898,7 @@ export function BuildState() {
                               key={m.index}
                               className={`px-1.5 py-0.5 rounded transition-colors flex items-center justify-between ${
                                 isNext
-                                  ? 'text-amber-300 font-bold bg-amber-500/20 border border-amber-500/40 shadow-xs'
+                                  ? 'text-emerald-300 font-bold bg-emerald-500/20 border border-emerald-500/40 shadow-xs'
                                   : isUnlocked
                                   ? 'text-zinc-500 line-through decoration-zinc-700'
                                   : 'text-zinc-400'
@@ -845,7 +913,7 @@ export function BuildState() {
                             >
                               <span>{m.label}: {m.cost}</span>
                               {isNext && (
-                                <span className="text-[9px] font-extrabold text-amber-400 uppercase tracking-wider ml-1 bg-amber-400/20 px-1 rounded">
+                                <span className="text-[9px] font-extrabold text-emerald-400 uppercase tracking-wider ml-1 bg-emerald-400/20 px-1 rounded">
                                   Next
                                 </span>
                               )}
