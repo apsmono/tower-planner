@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseBattleReport, parseBulkBattleReports } from './parser';
+import { parseBattleReport, parseBulkBattleReports, getField, computeContentHash } from './parser';
 import { getModelCells } from './cellModel';
 
 const farmingRunFixture = `
@@ -85,6 +85,34 @@ Coins Earned        6.09B
 Cells Earned        573
 `;
 
+// Colliding fixture across multiple v2 sections
+const collidingSectionsFixture = `
+Battle Report
+Tier	11
+Wave	4500
+Damage
+Black Hole	3.36s
+Orbs	128.45s
+Death Wave	6.03q
+Thorns	31.39s
+Enemies Hit By
+Black Hole	11.19K
+Orbs	48.74K
+Death Wave	10.30K
+Thorns	6.61K
+Coins
+Black Hole	1.37B
+Orbs	0
+Death Wave	305.70M
+Golden Tower	1.57B
+Cash
+Golden Tower	$254.55M
+Enemies Destroyed By
+Black Hole	135
+Orbs	48706
+Thorns	4139
+`;
+
 describe('Battle Report Parser', () => {
   it('should parse farming run values and durations correctly', () => {
     const run = parseBattleReport(farmingRunFixture);
@@ -95,15 +123,17 @@ describe('Battle Report Parser', () => {
     expect(run.tierSuffix).toBeNull();
     expect(run.wave).toBe(5881);
     expect(run.killedBy).toBe('Ranged');
+    expect(run.rawText).toBe(farmingRunFixture);
+    expect(run.parserVersion).toBeGreaterThanOrEqual(1);
     
-    // Normalised fields
-    expect(run.fields.coinsEarned).toBe(1.13 * 1e12);
-    expect(run.fields.cellsEarned).toBe(47.89 * 1000);
-    expect(run.fields.rerollShardsEarned).toBe(6.36 * 1000);
-    expect(run.fields.damageGainFromBerserk).toBe(8.0);
-    expect(run.fields.damageDealt).toBe(3.31 * 1e27);
-    expect(run.fields.chainLightningDamage).toBe(23.74 * 1e21);
-    expect(run.fields.deathWaveDamage).toBe(353.64 * 1e15);
+    // Normalised fields via getField
+    expect(getField(run.fields, 'coinsEarned')).toBe(1.13 * 1e12);
+    expect(getField(run.fields, 'cellsEarned')).toBe(47.89 * 1000);
+    expect(getField(run.fields, 'rerollShardsEarned')).toBe(6.36 * 1000);
+    expect(getField(run.fields, 'damageGainFromBerserk')).toBe(8.0);
+    expect(getField(run.fields, 'damageDealt')).toBe(3.31 * 1e27);
+    expect(getField(run.fields, 'chainLightningDamage')).toBe(23.74 * 1e21);
+    expect(getField(run.fields, 'deathWaveDamage')).toBe(353.64 * 1e15);
   });
 
   it('should handle regional localisations (EU comma separator)', () => {
@@ -114,12 +144,12 @@ describe('Battle Report Parser', () => {
     expect(run.wave).toBe(9135);
     
     // Check regional decimals parsed as standard numbers
-    expect(run.fields.coinsEarned).toBe(43.91 * 1e12);
-    expect(run.fields.coinsPerHour).toBe(3.79 * 1e12);
-    expect(run.fields.cellsEarned).toBe(248.55 * 1000);
-    expect(run.fields.damageDealt).toBe(4.96 * 1e36); // aa
-    expect(run.fields.damageGainFromBerserk).toBe(0);
-    expect(run.fields.hpFromDeathWave).toBe(9.98 * 1e12);
+    expect(getField(run.fields, 'coinsEarned')).toBe(43.91 * 1e12);
+    expect(getField(run.fields, 'coinsPerHour')).toBe(3.79 * 1e12);
+    expect(getField(run.fields, 'cellsEarned')).toBe(248.55 * 1000);
+    expect(getField(run.fields, 'Combat', 'damageDealt')).toBe(4.96 * 1e36); // aa
+    expect(getField(run.fields, 'Combat', 'damageGainFromBerserk')).toBe(0);
+    expect(getField(run.fields, 'Combat', 'hpFromDeathWave')).toBe(9.98 * 1e12);
   });
 
   it('should parse tournament run suffix', () => {
@@ -128,11 +158,29 @@ describe('Battle Report Parser', () => {
     expect(run.tier).toBe(8);
     expect(run.tierSuffix).toBe('+');
     expect(run.wave).toBe(871);
-    expect(run.fields.coinsEarned).toBe(6.09 * 1e9);
-    expect(run.fields.cellsEarned).toBe(573);
+    expect(getField(run.fields, 'coinsEarned')).toBe(6.09 * 1e9);
+    expect(getField(run.fields, 'cellsEarned')).toBe(573);
   });
 
-  it('should split and parse bulk reports', () => {
+  it('should distinguish section-scoped colliding labels without overwrite', () => {
+    const run = parseBattleReport(collidingSectionsFixture);
+    
+    // Black Hole across Damage, Enemies Hit By, Coins, Enemies Destroyed By
+    expect(getField(run.fields, 'Damage', 'blackHole')).toBe(3.36 * 1e21); // 3.36s
+    expect(getField(run.fields, 'Enemies Hit By', 'blackHole')).toBe(11.19 * 1000); // 11.19K
+    expect(getField(run.fields, 'Coins', 'blackHole')).toBe(1.37 * 1e9); // 1.37B
+    expect(getField(run.fields, 'Enemies Destroyed By', 'blackHole')).toBe(135);
+
+    // Golden Tower across Coins and Cash
+    expect(getField(run.fields, 'Coins', 'goldenTower')).toBe(1.57 * 1e9);
+    expect(getField(run.fields, 'Cash', 'goldenTower')).toBe(254.55 * 1e6);
+
+    // Orbs across Damage and Enemies Destroyed By
+    expect(getField(run.fields, 'Damage', 'orbs')).toBe(128.45 * 1e21);
+    expect(getField(run.fields, 'Enemies Destroyed By', 'orbs')).toBe(48706);
+  });
+
+  it('should split and parse bulk reports retaining raw text', () => {
     const bulkInput = `
 Battle Report
 Tier	10
@@ -145,8 +193,19 @@ Wave	2000
     expect(runs).toHaveLength(2);
     expect(runs[0].tier).toBe(10);
     expect(runs[0].wave).toBe(1000);
+    expect(runs[0].rawText).toContain('Tier\t10');
     expect(runs[1].tier).toBe(11);
     expect(runs[1].wave).toBe(2000);
+    expect(runs[1].rawText).toContain('Tier\t11');
+  });
+
+  it('should compute deterministic SHA-256 content hashes', async () => {
+    const text1 = 'Battle Report\nTier 10\nWave 1000';
+    const text2 = '  Battle Report\r\nTier  10\r\nWave 1000  ';
+    const hash1 = await computeContentHash(text1);
+    const hash2 = await computeContentHash(text2);
+    expect(hash1).toBeTruthy();
+    expect(hash1).toBe(hash2);
   });
 });
 

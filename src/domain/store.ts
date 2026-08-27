@@ -1,19 +1,21 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { type ParsedRun, parseDuration } from './parser';
+import { putRunIDB, putRunsIDB, deleteRunIDB, enqueueOutboxIDB } from './db/indexedDB';
 
 export interface Run extends ParsedRun {
   id: string;
   importedAt: string; // ISO string
   runType: 'farm' | 'tournament' | 'milestone';
   tournament: {
-    bracket: string;
+    bracket: string | null;
     rank: number | null;
   } | null;
   dissonanceMultiplier: number; // default 1.0
   excluded: boolean;
   notes: string;
   gameVersion: string | null;
+  contentHash: string;
 }
 
 export type EffectChannel =
@@ -438,10 +440,10 @@ const INITIAL_BUILD: BuildState = {
     shards: 1500
   },
   labs: [
-    { researchId: 'labs_speed', level: 88, boost: 2.0, startedAt: new Date().toISOString() },
-    { researchId: 'auto_pick', level: 9, boost: 1.5, startedAt: new Date().toISOString() },
+    { researchId: 'lab_speed', level: 88, boost: 2.0, startedAt: new Date().toISOString() },
+    { researchId: 'auto_pick_ranking', level: 9, boost: 1.5, startedAt: new Date().toISOString() },
     { researchId: 'wall_regen', level: 7, boost: 2.0, startedAt: new Date().toISOString() },
-    { researchId: 'dw_cells', level: 9, boost: 2.0, startedAt: new Date().toISOString() },
+    { researchId: 'dw_cell', level: 9, boost: 2.0, startedAt: new Date().toISOString() },
     { researchId: 'wall_thorns', level: 7, boost: 2.0, startedAt: new Date().toISOString() }
   ],
   labSpeedMultiplier: 3.12, // example default
@@ -461,7 +463,7 @@ export const createInitialTasks = (): PlannerTask[] => {
   const createdAt = new Date().toISOString();
   return [
     {
-      id: 'task-garlic-thorns-13',
+      id: crypto.randomUUID ? crypto.randomUUID() : 'task-garlic-thorns-13',
       type: 'research',
       name: 'Garlic Thorns to Lv.13',
       status: 'active',
@@ -471,7 +473,7 @@ export const createInitialTasks = (): PlannerTask[] => {
       notes: 'Required baseline to disable heat-up footgun.'
     },
     {
-      id: 'task-stones-1250',
+      id: crypto.randomUUID ? crypto.randomUUID() : 'task-stones-1250',
       type: 'resource',
       name: 'Save 1,250 Stones for 6th UW',
       status: 'active',
@@ -481,7 +483,7 @@ export const createInitialTasks = (): PlannerTask[] => {
       notes: 'Estimated 75% Spotlight contribution.'
     },
     {
-      id: 'task-wall-regen-10',
+      id: crypto.randomUUID ? crypto.randomUUID() : 'task-wall-regen-10',
       type: 'research',
       name: 'Wall Regen to Lv.10',
       status: 'active',
@@ -515,6 +517,10 @@ const checkTaskCompletionsHelper = (tasks: PlannerTask[], build: BuildState): Pl
   });
 };
 
+function isUUID(str: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(str);
+}
+
 export const useStore = create<StoreState>()(
   persist(
     (set) => ({
@@ -532,17 +538,45 @@ export const useStore = create<StoreState>()(
       })),
       
       // Runs actions
-      addRun: (run) => set((state) => ({ runs: [...state.runs, run] })),
-      addRuns: (newRuns) => set((state) => ({ runs: [...state.runs, ...newRuns] })),
-      deleteRun: (id) => set((state) => ({ runs: state.runs.filter((r) => r.id !== id) })),
-      updateRun: (id, updates) => set((state) => ({
-        runs: state.runs.map((r) => (r.id === id ? { ...r, ...updates } : r))
-      })),
+      addRun: (run) => {
+        putRunIDB(run).catch(console.warn);
+        enqueueOutboxIDB({ type: 'upsert_run', payload: run }).catch(console.warn);
+        set((state) => ({ runs: [...state.runs, run] }));
+      },
+      addRuns: (newRuns) => {
+        putRunsIDB(newRuns).catch(console.warn);
+        for (const r of newRuns) {
+          enqueueOutboxIDB({ type: 'upsert_run', payload: r }).catch(console.warn);
+        }
+        set((state) => ({ runs: [...state.runs, ...newRuns] }));
+      },
+      deleteRun: (id) => {
+        deleteRunIDB(id).catch(console.warn);
+        enqueueOutboxIDB({ type: 'soft_delete_run', payload: { id, deletedAt: new Date().toISOString() } }).catch(console.warn);
+        set((state) => ({ runs: state.runs.filter((r) => r.id !== id) }));
+      },
+      updateRun: (id, updates) => {
+        set((state) => {
+          const updatedRuns = state.runs.map((r) => {
+            if (r.id === id) {
+              const updated = { ...r, ...updates };
+              putRunIDB(updated).catch(console.warn);
+              enqueueOutboxIDB({ type: 'update_run', payload: updated }).catch(console.warn);
+              return updated;
+            }
+            return r;
+          });
+          return { runs: updatedRuns };
+        });
+      },
       clearRuns: () => set({ runs: [] }),
-      importFullState: (runs, build) => set((state) => {
-        const nextTasks = checkTaskCompletionsHelper(state.tasks, build);
-        return { runs, build, tasks: nextTasks };
-      }),
+      importFullState: (runs, build) => {
+        putRunsIDB(runs).catch(console.warn);
+        set((state) => {
+          const nextTasks = checkTaskCompletionsHelper(state.tasks, build);
+          return { runs, build, tasks: nextTasks };
+        });
+      },
       
       // Build state actions
       updateResources: (resources) => set((state) => {
@@ -670,7 +704,7 @@ export const useStore = create<StoreState>()(
       addTask: (task) => set((state) => {
         const newTask: PlannerTask = {
           ...task,
-          id: `task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          id: crypto.randomUUID ? crypto.randomUUID() : `task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           createdAt: new Date().toISOString(),
           status: 'active'
         };
@@ -694,17 +728,76 @@ export const useStore = create<StoreState>()(
     }),
     {
       name: 'tower-planner-store',
-      version: 2,
-      // When migrating from an older version, reset UI state that shouldn't persist
+      version: 3,
       migrate: (persisted: unknown, fromVersion: number) => {
+        let state = persisted as Partial<StoreState>;
+        
         if (fromVersion < 2) {
-          const state = persisted as Partial<StoreState>;
-          return {
+          state = {
             ...state,
             isBannerDismissed: false,
           };
         }
-        return persisted as StoreState;
+
+        if (fromVersion < 3) {
+          const idMap: Record<string, string> = {};
+          
+          // Migrate runs
+          const runs = (state.runs || []).map((r) => {
+            let id = r.id;
+            if (!isUUID(id)) {
+              const newId = crypto.randomUUID ? crypto.randomUUID() : '00000000-0000-0000-0000-000000000000';
+              idMap[id] = newId;
+              id = newId;
+            }
+
+            // Clean tournament bracket default
+            let tournament = r.tournament;
+            if (tournament && tournament.bracket === 'Champion') {
+              tournament = { ...tournament, bracket: null };
+            }
+
+            return {
+              ...r,
+              id,
+              rawText: r.rawText ?? '',
+              parserVersion: r.parserVersion ?? 0,
+              contentHash: r.contentHash ?? '',
+              tournament
+            };
+          });
+
+          // Remap task references to run IDs
+          const tasks = (state.tasks || []).map((t) => {
+            if (t.experimentCompletedRunIds && t.experimentCompletedRunIds.length > 0) {
+              const remappedIds = t.experimentCompletedRunIds.map((rid) => idMap[rid] || rid);
+              return { ...t, experimentCompletedRunIds: remappedIds };
+            }
+            return t;
+          });
+
+          // Fix 3 mismatched lab IDs in build state
+          let build = state.build;
+          if (build && build.labs) {
+            const fixedLabs = build.labs.map((slot) => {
+              let researchId = slot.researchId;
+              if (researchId === 'labs_speed') researchId = 'lab_speed';
+              if (researchId === 'auto_pick') researchId = 'auto_pick_ranking';
+              if (researchId === 'dw_cells') researchId = 'dw_cell';
+              return { ...slot, researchId };
+            });
+            build = { ...build, labs: fixedLabs };
+          }
+
+          state = {
+            ...state,
+            runs,
+            tasks,
+            build
+          };
+        }
+
+        return state as StoreState;
       },
     }
   )

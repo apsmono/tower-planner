@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useStore, type Run } from '../domain/store';
-import { parseBulkBattleReports } from '../domain/parser';
+import { parseBulkBattleReports, getField, computeContentHash, CURRENT_PARSER_VERSION } from '../domain/parser';
+import { reparseLegacyRuns } from '../domain/syncEngine';
 import { 
   Check, 
   AlertCircle, 
@@ -11,7 +12,9 @@ import {
   HelpCircle,
   Search,
   SlidersHorizontal,
-  X
+  X,
+  RotateCw,
+  Sparkles
 } from 'lucide-react';
 import { CurrencyIcon } from './CurrencyIcon';
 
@@ -24,6 +27,20 @@ export function ImportRuns() {
   const [pasteText, setPasteText] = useState('');
   const [previews, setPreviews] = useState<(Omit<Run, 'id' | 'importedAt'> & { key: string })[]>([]);
   const [localeOverride, setLocaleOverride] = useState<'auto' | 'us' | 'eu'>('auto');
+  const [isReparsing, setIsReparsing] = useState(false);
+  const [reparseNotice, setReparseNotice] = useState<string | null>(null);
+
+  const reparsableRuns = storeRuns.filter(
+    (r) => r.rawText && r.rawText.trim().length > 0 && r.parserVersion < CURRENT_PARSER_VERSION
+  );
+
+  const handleReparse = async () => {
+    setIsReparsing(true);
+    const { recomputedCount } = await reparseLegacyRuns();
+    setIsReparsing(false);
+    setReparseNotice(`Successfully re-parsed ${recomputedCount} runs with parser v${CURRENT_PARSER_VERSION}.`);
+    setTimeout(() => setReparseNotice(null), 4000);
+  };
 
   // Filter and Sort states
   const [searchQuery, setSearchQuery] = useState('');
@@ -91,12 +108,14 @@ export function ImportRuns() {
       // Helper function to get rates
       const getCoinsHr = (r: Run) => {
         const hours = r.realTimeSec / 3600;
-        return hours > 0 ? (r.fields.coinsEarned / r.dissonanceMultiplier) / hours : 0;
+        const coins = getField(r.fields, 'coinsEarned');
+        return hours > 0 ? (coins / r.dissonanceMultiplier) / hours : 0;
       };
       
       const getCellsHr = (r: Run) => {
         const hours = r.realTimeSec / 3600;
-        return hours > 0 ? r.fields.cellsEarned / hours : 0;
+        const cells = getField(r.fields, 'cellsEarned');
+        return hours > 0 ? cells / hours : 0;
       };
 
       switch (sortBy) {
@@ -145,50 +164,66 @@ export function ImportRuns() {
       return;
     }
 
-    try {
-      const parsedList = parseBulkBattleReports(pasteText);
-      const mapped = parsedList.map((parsed, idx) => {
-        // Auto classify runType
-        let runType: 'farm' | 'tournament' | 'milestone' = 'farm';
-        if (parsed.tierSuffix === '+') {
-          runType = 'tournament';
-        } else if (parsed.wave >= 4500) {
-          // just a heuristic, user can edit
-          runType = 'farm';
-        }
-        
-        // Auto exclude if wave < 50
-        const excluded = parsed.wave < 50;
-        
-        return {
-          key: `${idx}-${Date.now()}`,
-          battleDate: parsed.battleDate,
-          gameTimeSec: parsed.gameTimeSec,
-          realTimeSec: parsed.realTimeSec,
-          tier: parsed.tier,
-          tierSuffix: parsed.tierSuffix,
-          wave: parsed.wave,
-          killedBy: parsed.killedBy,
-          fields: parsed.fields,
-          raw: parsed.raw,
+    let isMounted = true;
+
+    async function parseAndPrepare() {
+      try {
+        const parsedList = parseBulkBattleReports(pasteText);
+        const mapped = await Promise.all(parsedList.map(async (parsed, idx) => {
+          // Auto classify runType
+          let runType: 'farm' | 'tournament' | 'milestone' = 'farm';
+          if (parsed.tierSuffix === '+') {
+            runType = 'tournament';
+          } else if (parsed.wave >= 4500) {
+            runType = 'farm';
+          }
           
-          runType,
-          tournament: runType === 'tournament' ? { bracket: 'Champion', rank: null } : null,
-          dissonanceMultiplier: 1.0,
-          excluded,
-          notes: parsed.wave < 50 ? 'Suspected crash run (wave < 50)' : '',
-          gameVersion: null
-        };
-      });
-      setPreviews(mapped);
-    } catch (err) {
-      console.error(err);
+          // Auto exclude if wave < 50
+          const excluded = parsed.wave < 50;
+          const hash = await computeContentHash(parsed.rawText);
+          
+          return {
+            key: `${idx}-${Date.now()}`,
+            battleDate: parsed.battleDate,
+            gameTimeSec: parsed.gameTimeSec,
+            realTimeSec: parsed.realTimeSec,
+            tier: parsed.tier,
+            tierSuffix: parsed.tierSuffix,
+            wave: parsed.wave,
+            killedBy: parsed.killedBy,
+            fields: parsed.fields,
+            raw: parsed.raw,
+            rawText: parsed.rawText,
+            parserVersion: parsed.parserVersion,
+            contentHash: hash,
+            
+            runType,
+            tournament: runType === 'tournament' ? { bracket: null, rank: null } : null,
+            dissonanceMultiplier: 1.0,
+            excluded,
+            notes: parsed.wave < 50 ? 'Suspected crash run (wave < 50)' : '',
+            gameVersion: null
+          };
+        }));
+
+        if (isMounted) {
+          setPreviews(mapped);
+        }
+      } catch (err) {
+        console.error(err);
+      }
     }
+
+    parseAndPrepare();
+
+    return () => {
+      isMounted = false;
+    };
   }, [pasteText, localeOverride]);
 
   const handleImport = () => {
-    const runsToSave: Run[] = previews.map((p, idx) => ({
-      id: `${Date.now()}-${idx}-${Math.random().toString(36).substr(2, 9)}`,
+    const runsToSave: Run[] = previews.map((p) => ({
+      id: crypto.randomUUID ? crypto.randomUUID() : `00000000-0000-0000-0000-${Math.random().toString(16).slice(2, 14).padStart(12, '0')}`,
       importedAt: new Date().toISOString(),
       battleDate: p.battleDate,
       gameTimeSec: p.gameTimeSec,
@@ -199,6 +234,9 @@ export function ImportRuns() {
       killedBy: p.killedBy,
       fields: p.fields,
       raw: p.raw,
+      rawText: p.rawText,
+      parserVersion: p.parserVersion,
+      contentHash: p.contentHash,
       runType: p.runType,
       tournament: p.tournament,
       dissonanceMultiplier: p.dissonanceMultiplier,
@@ -220,7 +258,7 @@ export function ImportRuns() {
           // If runType is changed, sync tournament sub-state
           if (updates.runType !== undefined) {
             merged.tournament = updates.runType === 'tournament' 
-              ? { bracket: 'Champion', rank: null } 
+              ? { bracket: null, rank: null } 
               : null;
           }
           return merged;
@@ -238,7 +276,7 @@ export function ImportRuns() {
       'gemblockstapped', 'cellsearned', 'rerollshardsearned', 'damagetaken',
       'damagetakenwall', 'damagetakenwhileberserked', 'damagegainfromberserk',
       'deathdefy', 'damagedealt', 'projectilesdamage', 'rendarmordamage',
-      'projectilescount', 'lifesteal', 'thorndamage', 'orbdamage', 'orbhits',
+      'projectilescount', 'lifesteal', 'thorndamage', 'thorns', 'orbdamage', 'orbhits',
       'enemieshitbyorbs', 'landminedamage', 'landminesspawned', 'deathraydamage',
       'smartmissiledamage', 'innerlandminedamage', 'chainlightningdamage',
       'deathwavedamage', 'swampdamage', 'blackholedamage', 'electronsdamage',
@@ -254,11 +292,13 @@ export function ImportRuns() {
       'coinsfromblackholebonus', 'coinsfromdeathwave', 'coinsfromspotlight',
       'coinsfromorbs', 'coinsfromcoinupgrade', 'coinsfromcoinbonuses',
       'cashfromgoldentower', 'goldenbotcoinsearned', 'coinsstolen',
-      'coinsfetched', 'cellsfromdeathwave', 'cellsfromglobal'
+      'coinsfetched', 'cellsfromdeathwave', 'cellsfromglobal', 'blackhole',
+      'orbs', 'deathwave', 'goldentower', 'spotlight'
     ];
     
     return Object.keys(raw).filter(key => {
-      const clean = key.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const label = key.includes('::') ? key.split('::')[1] : key;
+      const clean = label.toLowerCase().replace(/[^a-z0-9]/g, '');
       return !knownKeys.includes(clean);
     });
   };
@@ -274,6 +314,38 @@ export function ImportRuns() {
           </p>
         </div>
       </div>
+
+      {/* Retroactive Parser Upgrade Banner */}
+      {reparseNotice && (
+        <div className="p-3.5 bg-emerald-950/40 border border-emerald-500/40 rounded-xl text-xs text-emerald-300 flex items-center gap-2 animate-fadeIn">
+          <Sparkles className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>{reparseNotice}</span>
+        </div>
+      )}
+
+      {reparsableRuns.length > 0 && !reparseNotice && (
+        <div className="p-4 bg-indigo-950/30 border border-indigo-500/40 rounded-xl flex flex-wrap items-center justify-between gap-3 animate-fadeIn">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-indigo-500/20 text-indigo-400 rounded-lg">
+              <Sparkles className="w-4 h-4" />
+            </div>
+            <div>
+              <h4 className="text-xs font-semibold text-white">Parser Update Available (v{CURRENT_PARSER_VERSION})</h4>
+              <p className="text-[11px] text-zinc-400">
+                You have {reparsableRuns.length} run(s) imported with an older parser version. Re-parse from their original report text?
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={handleReparse}
+            disabled={isReparsing}
+            className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-md shadow-indigo-600/20"
+          >
+            <RotateCw className={`w-3.5 h-3.5 ${isReparsing ? 'animate-spin' : ''}`} />
+            <span>{isReparsing ? 'Re-parsing...' : `Re-parse ${reparsableRuns.length} Runs`}</span>
+          </button>
+        </div>
+      )}
 
       {/* Paste Area & Import Form */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -330,7 +402,7 @@ export function ImportRuns() {
             {previews.length > 0 && (
               <button
                 onClick={handleImport}
-                className="w-full py-2.5 px-4 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-sm font-semibold text-white shadow-lg shadow-emerald-900/30 transition-all flex items-center justify-center space-x-2 animate-pulse-glow"
+                className="w-full py-2.5 px-4 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-sm font-semibold text-white shadow-lg shadow-emerald-900/30 transition-all flex items-center justify-center space-x-2 animate-pulse-glow cursor-pointer"
               >
                 <Check className="w-4 h-4" />
                 <span>Save {previews.length} Run(s) to Store</span>
@@ -351,6 +423,9 @@ export function ImportRuns() {
           <div className="space-y-6">
             {previews.map((preview) => {
               const unmatched = getUnmatchedKeys(preview.raw);
+              const coinsVal = getField(preview.fields, 'coinsEarned');
+              const cellsVal = getField(preview.fields, 'cellsEarned');
+
               return (
                 <div key={preview.key} className="glass-panel p-5 rounded-xl border border-zinc-800 space-y-4">
                   <div className="flex flex-wrap justify-between items-start gap-4">
@@ -369,14 +444,14 @@ export function ImportRuns() {
                           <CurrencyIcon currency="coins" size="xs" />
                           Coins
                         </span>
-                        <span className="text-sm font-semibold text-amber-500">{formatCompact(preview.fields.coinsEarned || 0)}</span>
+                        <span className="text-sm font-semibold text-amber-500">{formatCompact(coinsVal)}</span>
                       </div>
                       <div>
                         <span className="text-[10px] text-zinc-500 font-mono uppercase flex items-center gap-1">
                           <CurrencyIcon currency="cells" size="xs" />
                           Cells
                         </span>
-                        <span className="text-sm font-semibold text-purple-400">{formatCompact(preview.fields.cellsEarned || 0)}</span>
+                        <span className="text-sm font-semibold text-purple-400">{formatCompact(cellsVal)}</span>
                       </div>
                       <div>
                         <span className="text-[10px] text-zinc-500 font-mono uppercase block">Real Duration</span>
@@ -461,12 +536,13 @@ export function ImportRuns() {
                         <div>
                           <label className="text-[10px] text-zinc-500 font-mono uppercase block mb-1">Bracket</label>
                           <select
-                            value={preview.tournament?.bracket || 'Champion'}
+                            value={preview.tournament?.bracket || ''}
                             onChange={(e) => updatePreview(preview.key, { 
-                              tournament: { bracket: e.target.value, rank: preview.tournament?.rank || null }
+                              tournament: { bracket: e.target.value || null, rank: preview.tournament?.rank || null }
                             })}
                             className="w-full bg-zinc-900 border border-zinc-800 rounded p-1.5 text-xs focus:outline-none focus:border-indigo-500 text-zinc-200"
                           >
+                            <option value="">Unknown / Select League</option>
                             <option value="Copper">Copper</option>
                             <option value="Silver">Silver</option>
                             <option value="Gold">Gold</option>
@@ -486,7 +562,7 @@ export function ImportRuns() {
                             value={preview.tournament?.rank || ''}
                             onChange={(e) => updatePreview(preview.key, {
                               tournament: { 
-                                bracket: preview.tournament?.bracket || 'Champion', 
+                                bracket: preview.tournament?.bracket || null, 
                                 rank: parseInt(e.target.value, 10) || null 
                               }
                             })}
@@ -554,7 +630,7 @@ export function ImportRuns() {
                 setFilterStatus('all');
                 setSortBy('date-desc');
               }}
-              className="text-[10px] font-mono text-zinc-400 hover:text-indigo-400 border border-zinc-800 hover:border-indigo-500/30 rounded px-2 py-1 transition-all self-start md:self-auto"
+              className="text-[10px] font-mono text-zinc-400 hover:text-indigo-400 border border-zinc-800 hover:border-indigo-500/30 rounded px-2 py-1 transition-all self-start md:self-auto cursor-pointer"
             >
               Reset Filters
             </button>
@@ -689,8 +765,10 @@ export function ImportRuns() {
               <tbody className="divide-y divide-zinc-800/60 bg-zinc-950/20">
                 {processedRuns.map((run) => {
                   const hours = run.realTimeSec / 3600;
-                  const coinsHr = hours > 0 ? (run.fields.coinsEarned / run.dissonanceMultiplier) / hours : 0;
-                  const cellsHr = hours > 0 ? run.fields.cellsEarned / hours : 0;
+                  const coinsVal = getField(run.fields, 'coinsEarned');
+                  const cellsVal = getField(run.fields, 'cellsEarned');
+                  const coinsHr = hours > 0 ? (coinsVal / run.dissonanceMultiplier) / hours : 0;
+                  const cellsHr = hours > 0 ? cellsVal / hours : 0;
                   
                   return (
                     <tr key={run.id} className="hover:bg-zinc-900/20 transition-colors">
@@ -706,7 +784,7 @@ export function ImportRuns() {
                             : 'bg-zinc-900 text-zinc-400 border border-zinc-700/50'
                         }`}>
                           {run.runType === 'tournament' 
-                            ? `Tourney (${run.tournament?.bracket})` 
+                            ? `Tourney (${run.tournament?.bracket || 'Unknown'})` 
                             : run.runType}
                         </span>
                       </td>
@@ -737,7 +815,7 @@ export function ImportRuns() {
                       <td className="p-3 text-center">
                         <button
                           onClick={() => updateRun(run.id, { excluded: !run.excluded })}
-                          className="focus:outline-none"
+                          className="focus:outline-none cursor-pointer"
                           title={run.excluded ? 'Include in analysis' : 'Exclude from analysis'}
                         >
                           {run.excluded ? (
@@ -750,7 +828,7 @@ export function ImportRuns() {
                       <td className="p-3 text-center">
                         <button
                           onClick={() => deleteRun(run.id)}
-                          className="text-zinc-500 hover:text-rose-400 transition-colors p-1"
+                          className="text-zinc-500 hover:text-rose-400 transition-colors p-1 cursor-pointer"
                           title="Delete run"
                         >
                           <Trash2 className="w-4 h-4" />

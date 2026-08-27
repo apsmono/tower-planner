@@ -49,6 +49,7 @@ const KEY_ALIASES: Record<string, string> = {
   projectilescount: 'projectilesCount',
   lifesteal: 'lifesteal',
   thorndamage: 'thornDamage',
+  thorns: 'thornDamage',
   orbdamage: 'orbDamage',
   orbhits: 'orbHits',
   enemieshitbyorbs: 'orbHits',
@@ -112,8 +113,15 @@ const KEY_ALIASES: Record<string, string> = {
   coinsstolen: 'coinsStolen',
   coinsfetched: 'coinsFetched',
   cellsfromdeathwave: 'cellsFromDeathWave',
-  cellsfromglobal: 'cellsFromGlobal'
+  cellsfromglobal: 'cellsFromGlobal',
+  blackhole: 'blackHole',
+  orbs: 'orbs',
+  deathwave: 'deathWave',
+  goldentower: 'goldenTower',
+  spotlight: 'spotlight'
 };
+
+export const CURRENT_PARSER_VERSION = 1;
 
 export interface ParsedRun {
   battleDate: string | null;
@@ -125,12 +133,39 @@ export interface ParsedRun {
   killedBy: string;
   fields: Record<string, number>;
   raw: Record<string, string>;
+  rawText: string;
+  parserVersion: number;
 }
 
 // Normalize key by lowercasing and stripping non-alphanumeric chars
 export function normalizeKey(label: string): string {
   const clean = label.toLowerCase().replace(/[^a-z0-9]/g, '');
   return KEY_ALIASES[clean] || clean;
+}
+
+/**
+ * Normalizes raw report text for cryptographic hashing (SHA-256).
+ * Trims ends, normalizes newlines to \n, and collapses multiple whitespace/tab characters.
+ */
+export function normalizeRawText(rawText: string): string {
+  return rawText
+    .trim()
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+    .replace(/[ \t]+/g, ' ');
+}
+
+/**
+ * Computes SHA-256 content hash of normalized report text.
+ */
+export async function computeContentHash(rawText: string): Promise<string> {
+  const normalized = normalizeRawText(rawText);
+  if (!normalized) return '';
+  const encoder = new TextEncoder();
+  const data = encoder.encode(normalized);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
 // Parse duration like "2d 1h 49m 3s" or "7h 46m 6s" to seconds
@@ -159,6 +194,9 @@ export function parseDuration(val: string): number {
 export function cleanAndParseFloat(valStr: string): number {
   let s = valStr.trim();
   
+  // Extract bracketed percentage if present (e.g. "19006 [19.5%]") - we parse the primary value
+  s = s.replace(/\[.*?\]/g, '').trim();
+
   // Strip starting $ or x symbols and potential leading/trailing space
   s = s.replace(/^[\$x\s]+/, '');
   
@@ -221,6 +259,86 @@ export function cleanAndParseFloat(valStr: string): number {
   return num;
 }
 
+/**
+ * Retrieves a numeric field value from section-scoped fields.
+ * Supports:
+ * - `getField(fields, 'Combat', 'blackHoleDamage')`
+ * - `getField(fields, 'Combat::blackHoleDamage')`
+ * - `getField(fields, 'coinsEarned')` (resolves across common sections or legacy flat keys)
+ */
+export function getField(
+  fields: Record<string, number> | undefined,
+  keyOrSection: string,
+  key?: string
+): number {
+  if (!fields) return 0;
+
+  if (key !== undefined) {
+    const section = keyOrSection;
+    const norm = normalizeKey(key);
+    const exact1 = `${section}::${norm}`;
+    const exact2 = `${section}::${key}`;
+    if (fields[exact1] !== undefined) return fields[exact1];
+    if (fields[exact2] !== undefined) return fields[exact2];
+    return 0;
+  }
+
+  // Single argument passed
+  if (keyOrSection.includes('::')) {
+    if (fields[keyOrSection] !== undefined) return fields[keyOrSection];
+    const [sec, k] = keyOrSection.split('::');
+    const norm = normalizeKey(k);
+    const normalizedScoped = `${sec}::${norm}`;
+    if (fields[normalizedScoped] !== undefined) return fields[normalizedScoped];
+    return 0;
+  }
+
+  // Flat key lookup with section fallbacks
+  const normKey = normalizeKey(keyOrSection);
+  
+  // 1. Direct flat match (legacy or root)
+  if (fields[keyOrSection] !== undefined) return fields[keyOrSection];
+  if (fields[normKey] !== undefined) return fields[normKey];
+
+  // 2. Search common sections in priority order
+  const candidateSections = [
+    'Battle Report',
+    'Coins',
+    'Combat',
+    'Damage',
+    'Damage Taken',
+    'Currencies',
+    'Utility',
+    'Bonus Health Gained',
+    'Health Regenerated',
+    'Enemies Hit By',
+    'Killed With Effect Active',
+    'Total Enemies',
+    'Enemies Destroyed By',
+    'Enemies Destroyed',
+    'Records',
+    'Bots',
+    'Guardian',
+    'Counts'
+  ];
+
+  for (const sec of candidateSections) {
+    const scopedNorm = `${sec}::${normKey}`;
+    if (fields[scopedNorm] !== undefined) return fields[scopedNorm];
+    const scopedRaw = `${sec}::${keyOrSection}`;
+    if (fields[scopedRaw] !== undefined) return fields[scopedRaw];
+  }
+
+  // 3. Fallback scan all keys ending in ::normKey
+  for (const [k, v] of Object.entries(fields)) {
+    if (k.endsWith(`::${normKey}`) || k.endsWith(`::${keyOrSection}`)) {
+      return v;
+    }
+  }
+
+  return 0;
+}
+
 // Parser for single Battle Report block
 export function parseBattleReport(text: string): ParsedRun {
   const lines = text.split(/\r?\n/);
@@ -232,6 +350,7 @@ export function parseBattleReport(text: string): ParsedRun {
   let tierSuffix: '+' | null = null;
   let wave = 0;
   let killedBy = '';
+  let currentSection = 'Battle Report';
   
   const fields: Record<string, number> = {};
   const raw: Record<string, string> = {};
@@ -243,15 +362,17 @@ export function parseBattleReport(text: string): ParsedRun {
     // Split on tabs or at least two spaces
     const parts = trimmed.split(/\t+| {2,}/);
     if (parts.length < 2) {
-      // Section header, skip or keep as raw if needed, but not data key-value
+      // Line without key-value delimiter is a section header
+      currentSection = trimmed;
       continue;
     }
     
     const label = parts[0].trim();
     const val = parts.slice(1).join(' ').trim();
     
-    // Store in raw
-    raw[label] = val;
+    // Store in section-scoped raw map
+    const scopedRawKey = `${currentSection}::${label}`;
+    raw[scopedRawKey] = val;
     
     const normKey = normalizeKey(label);
     
@@ -275,8 +396,9 @@ export function parseBattleReport(text: string): ParsedRun {
     } else if (normKey === 'killedBy') {
       killedBy = val;
     } else {
-      // Parse as numeric and store in fields
-      fields[normKey] = cleanAndParseFloat(val);
+      // Parse as numeric and store in section-scoped fields
+      const scopedFieldKey = `${currentSection}::${normKey}`;
+      fields[scopedFieldKey] = cleanAndParseFloat(val);
     }
   }
   
@@ -289,7 +411,9 @@ export function parseBattleReport(text: string): ParsedRun {
     wave,
     killedBy,
     fields,
-    raw
+    raw,
+    rawText: text,
+    parserVersion: CURRENT_PARSER_VERSION
   };
 }
 

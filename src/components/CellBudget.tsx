@@ -10,6 +10,8 @@ import {
 } from 'lucide-react';
 
 
+import { getField } from '../domain/parser';
+
 export function CellBudget() {
   const runs = useStore((state) => state.runs);
   const build = useStore((state) => state.build);
@@ -62,7 +64,7 @@ export function CellBudget() {
       // Sum all runs values
       runs.filter((r) => !r.excluded).forEach((r) => {
         playTimeSec += r.realTimeSec;
-        totalCellsEarned += r.fields.cellsEarned || 0;
+        totalCellsEarned += getField(r.fields, 'cellsEarned');
       });
 
       uptime = playTimeSec / elapsedSec;
@@ -78,7 +80,7 @@ export function CellBudget() {
   let totalFarmCells = 0;
   farmRuns.forEach((r) => {
     totalFarmHours += r.realTimeSec / 3600;
-    totalFarmCells += r.fields.cellsEarned || 0;
+    totalFarmCells += getField(r.fields, 'cellsEarned');
   });
   const avgFarmCellsHr = totalFarmHours > 0 ? totalFarmCells / totalFarmHours : 0;
   const theoreticalCeiling = avgFarmCellsHr * 24;

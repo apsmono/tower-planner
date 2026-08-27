@@ -18,6 +18,8 @@ import {
   Sparkles
 } from 'lucide-react';
 
+import { getField } from '../domain/parser';
+
 // Map effect channel to report field key
 const CHANNEL_FIELDS: Record<string, string> = {
   'coins.goldenTower': 'coinsFromGoldenTower',
@@ -60,8 +62,8 @@ export function ResearchQueue() {
   let totalCoins = 0;
   let totalCells = 0;
   farmRuns.forEach((r) => {
-    totalCoins += r.fields.coinsEarned;
-    totalCells += r.fields.cellsEarned;
+    totalCoins += getField(r.fields, 'coinsEarned');
+    totalCells += getField(r.fields, 'cellsEarned');
   });
   
   const defaultExchangeRate = totalCells > 0 ? totalCoins / totalCells : 23000000; // 23M coins per cell
@@ -119,13 +121,17 @@ export function ResearchQueue() {
           const isCoin = effect.channel.startsWith('coins.');
           const isDamage = effect.channel.startsWith('damage.');
           const isCell = effect.channel.startsWith('cells.');
+          const refCoins = getField(referenceRun.fields, 'coinsEarned');
+          const refDamage = getField(referenceRun.fields, 'damageDealt');
+          const refCells = getField(referenceRun.fields, 'cellsEarned');
+          const channelVal = getField(referenceRun.fields, fieldName);
           
-          if (isCoin && referenceRun.fields.coinsEarned > 0) {
-            channelShare = (referenceRun.fields[fieldName] || 0) / referenceRun.fields.coinsEarned;
-          } else if (isDamage && referenceRun.fields.damageDealt > 0) {
-            channelShare = (referenceRun.fields[fieldName] || 0) / referenceRun.fields.damageDealt;
-          } else if (isCell && referenceRun.fields.cellsEarned > 0) {
-            channelShare = (referenceRun.fields[fieldName] || 0) / referenceRun.fields.cellsEarned;
+          if (isCoin && refCoins > 0) {
+            channelShare = channelVal / refCoins;
+          } else if (isDamage && refDamage > 0) {
+            channelShare = channelVal / refDamage;
+          } else if (isCell && refCells > 0) {
+            channelShare = channelVal / refCells;
           } else {
             channelShare = 0.0;
           }
@@ -221,8 +227,10 @@ export function ResearchQueue() {
       { name: 'Death Wave Damage', key: 'deathWaveDamage' }
     ];
 
+    const refDamageDealt = getField(referenceRun!.fields, 'damageDealt');
     damageAttributions.forEach((attr) => {
-      const share = (referenceRun!.fields[attr.key] || 0) / referenceRun!.fields.damageDealt;
+      const channelVal = getField(referenceRun!.fields, attr.key);
+      const share = refDamageDealt > 0 ? (channelVal / refDamageDealt) : 0;
       if (share > 0 && share < 0.001) {
         deadLevers.push({ name: attr.name, share });
       }

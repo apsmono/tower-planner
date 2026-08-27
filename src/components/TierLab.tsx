@@ -9,6 +9,8 @@ import {
   Layers
 } from 'lucide-react';
 
+import { getField } from '../domain/parser';
+
 export function TierLab() {
   const runs = useStore((state) => state.runs);
 
@@ -27,8 +29,10 @@ export function TierLab() {
 
   farmRuns.forEach((run) => {
     const hours = run.realTimeSec / 3600;
-    const coinsHr = hours > 0 ? (run.fields.coinsEarned / run.dissonanceMultiplier) / hours : 0;
-    const cellsHr = hours > 0 ? run.fields.cellsEarned / hours : 0;
+    const coinsEarned = getField(run.fields, 'coinsEarned');
+    const cellsEarned = getField(run.fields, 'cellsEarned');
+    const coinsHr = hours > 0 ? (coinsEarned / run.dissonanceMultiplier) / hours : 0;
+    const cellsHr = hours > 0 ? cellsEarned / hours : 0;
 
     if (!tiersData[run.tier]) {
       tiersData[run.tier] = { waves: [], coinsHr: [], cellsHr: [], runLengths: [] };
