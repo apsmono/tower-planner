@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useStore } from '../domain/store';
 import { TaskHUD } from './TaskHUD';
 import { 
