@@ -12,9 +12,10 @@ import {
   Trophy, 
   AlertTriangle,
   Clock,
-  Zap,
   Cloud,
-  CloudCheck
+  CloudCheck,
+  LogIn,
+  User,
 } from 'lucide-react';
 
 export type TabId = 'runs' | 'tier-lab' | 'research-queue' | 'cell-budget' | 'build-state' | 'tournament';
@@ -60,134 +61,206 @@ export function Layout({ activeTab, setActiveTab, children }: LayoutProps) {
   const activeBoostsCount = build.labs.filter((l) => l.researchId).length;
 
   return (
-    <div className="min-h-screen md:h-screen md:overflow-hidden bg-zinc-950 text-zinc-100 flex flex-col md:flex-row">
-      
-      {/* Sidebar */}
-      <aside className="w-full md:w-64 bg-zinc-900/40 border-b md:border-b-0 md:border-r border-zinc-800/80 p-4 flex flex-col justify-between shrink-0 glass-panel md:h-full md:overflow-y-auto">
-        <div>
-          {/* Brand Header */}
-          <div className="flex items-center justify-between mb-8 px-2">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                <Zap className="w-4 h-4 text-white animate-pulse" />
-              </div>
-              <div>
-                <h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent">
-                  Tower Planner
-                </h1>
-                <p className="text-[10px] text-zinc-500 font-mono">v1.0.0</p>
-              </div>
-            </div>
+    <div className="h-screen flex flex-col bg-zinc-950 text-zinc-100 overflow-hidden">
 
-            {/* Quick Actions: Theme Selector & Cloud Sync */}
-            <div className="flex items-center space-x-1.5">
-              <ThemeToggle />
+      {/* ── Top Header Bar ─────────────────────────────────────── */}
+      <header className="shrink-0 h-12 flex items-center justify-between px-4 bg-zinc-900/70 border-b border-zinc-800/80 backdrop-blur-sm z-20">
+        {/* Left: subtle breadcrumb / page title placeholder */}
+        <div className="flex items-center gap-2 text-xs text-zinc-500 font-mono">
+          <span className="text-zinc-600">Tower Planner</span>
+          <span className="text-zinc-700">/</span>
+          <span className="text-zinc-400 capitalize">{activeTab.replace('-', ' ')}</span>
+        </div>
 
+        {/* Right: actions */}
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+
+          {/* Divider */}
+          <div className="w-px h-5 bg-zinc-700/60 mx-1" />
+
+          {user?.isLoggedIn ? (
+            /* Logged-in: compact account button */
+            <button
+              onClick={() => handleOpenAuth('info')}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-900/60 hover:bg-zinc-800/80 border border-zinc-800 hover:border-zinc-700 text-xs font-medium text-zinc-300 hover:text-white transition-all cursor-pointer"
+              title={`Signed in as ${user.email}`}
+            >
+              <User className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="hidden sm:inline max-w-[140px] truncate text-zinc-300">{user.email}</span>
+              <CloudCheck className="w-3.5 h-3.5 text-emerald-400" />
+            </button>
+          ) : (
+            /* Logged-out: Sign In only */
+            <button
+              onClick={() => handleOpenAuth('signin')}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900/60 hover:bg-zinc-800/80 border border-zinc-800 hover:border-zinc-700 text-xs font-medium text-zinc-300 hover:text-white transition-all cursor-pointer"
+            >
+              <LogIn className="w-3.5 h-3.5 text-indigo-400" />
+              <span>Sign In</span>
+            </button>
+          )}
+        </div>
+      </header>
+
+      {/* ── Body: Sidebar + Main ───────────────────────────────── */}
+      <div className="flex flex-1 overflow-hidden">
+
+        {/* Sidebar */}
+        <aside className="w-64 shrink-0 bg-zinc-900/40 border-r border-zinc-800/80 p-4 flex flex-col justify-between glass-panel overflow-y-auto">
+          <div>
+            {/* Brand Header */}
+            <div className="flex items-center justify-between mb-8 ps-2 pe-0">
+              <div className="flex items-center space-x-3">
+                {/* Neon hexagon icon — matches the reference favicon */}
+                <div className="w-8 h-8 shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="32" height="32">
+                    <defs>
+                      <filter id="si-glow-r" x="-60%" y="-60%" width="220%" height="220%">
+                        <feGaussianBlur stdDeviation="3" result="b"/>
+                        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+                      </filter>
+                      <filter id="si-glow-g" x="-60%" y="-60%" width="220%" height="220%">
+                        <feGaussianBlur stdDeviation="2.5" result="b"/>
+                        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+                      </filter>
+                      <filter id="si-glow-v" x="-60%" y="-60%" width="220%" height="220%">
+                        <feGaussianBlur stdDeviation="2" result="b"/>
+                        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+                      </filter>
+                    </defs>
+                    <rect width="100" height="100" fill="#050508" rx="12"/>
+                    {/* Outer hex – red/orange */}
+                    <polygon points="50,6 88,28 88,72 50,94 12,72 12,28" fill="none" stroke="#ff3300" strokeWidth="2.8" filter="url(#si-glow-r)" opacity="0.95"/>
+                    <polygon points="50,6 88,28 88,72 50,94 12,72 12,28" fill="none" stroke="#ff6600" strokeWidth="1" opacity="0.6"/>
+                    {/* Middle hex – green/cyan */}
+                    <polygon points="50,20 76,35 76,65 50,80 24,65 24,35" fill="none" stroke="#00ff88" strokeWidth="2.3" filter="url(#si-glow-g)" opacity="0.95"/>
+                    <polygon points="50,20 76,35 76,65 50,80 24,65 24,35" fill="none" stroke="#00ffcc" strokeWidth="0.9" opacity="0.55"/>
+                    {/* Inner hex – violet */}
+                    <polygon points="50,34 64,42 64,58 50,66 36,58 36,42" fill="none" stroke="#9900ff" strokeWidth="2" filter="url(#si-glow-v)" opacity="0.95"/>
+                    <polygon points="50,34 64,42 64,58 50,66 36,58 36,42" fill="none" stroke="#cc44ff" strokeWidth="0.8" opacity="0.6"/>
+                    {/* Corner spikes */}
+                    <line x1="50" y1="6" x2="50" y2="-2" stroke="#ff4400" strokeWidth="1.5" strokeLinecap="round" filter="url(#si-glow-r)" opacity="0.9"/>
+                    <line x1="88" y1="28" x2="95" y2="24" stroke="#ffaa00" strokeWidth="1.5" strokeLinecap="round" opacity="0.85"/>
+                    <line x1="88" y1="72" x2="95" y2="76" stroke="#00ff88" strokeWidth="1.5" strokeLinecap="round" filter="url(#si-glow-g)" opacity="0.85"/>
+                    <line x1="50" y1="94" x2="50" y2="102" stroke="#00ccff" strokeWidth="1.5" strokeLinecap="round" opacity="0.85"/>
+                    <line x1="12" y1="72" x2="5" y2="76" stroke="#6600ff" strokeWidth="1.5" strokeLinecap="round" filter="url(#si-glow-v)" opacity="0.85"/>
+                    <line x1="12" y1="28" x2="5" y2="24" stroke="#aa00ff" strokeWidth="1.5" strokeLinecap="round" filter="url(#si-glow-v)" opacity="0.85"/>
+                  </svg>
+                </div>
+                <div>
+                  <h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent">
+                    Tower Planner
+                  </h1>
+                  <p className="text-[10px] text-zinc-500 font-mono">v1.0.0</p>
+                </div>
+              </div>
+
+              {/* Cloud Sync icon — lives next to the brand */}
               <button
                 onClick={() => handleOpenAuth(user?.isLoggedIn ? 'info' : 'register')}
-                className={`p-2 rounded-lg border transition-all cursor-pointer ${
-                  user?.isLoggedIn
-                    ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-400 hover:bg-emerald-900/50 shadow-sm shadow-emerald-500/20'
-                    : 'bg-indigo-950/40 border-indigo-500/30 text-indigo-400 hover:bg-indigo-900/50 hover:border-indigo-400/50'
-                }`}
+                className="p-2 rounded-lg border transition-all cursor-pointer bg-zinc-900/60 hover:bg-zinc-800/80 border-zinc-800 hover:border-zinc-700"
                 title={user?.isLoggedIn ? `Cloud Synced as ${user.email}` : 'Sign in / Register to sync online'}
               >
-                {user?.isLoggedIn ? <CloudCheck className="w-4 h-4" /> : <Cloud className="w-4 h-4" />}
+                {user?.isLoggedIn
+                  ? <CloudCheck className="w-4 h-4 text-emerald-400 transition-transform duration-200 hover:scale-110" />
+                  : <Cloud className="w-4 h-4 text-indigo-400 transition-transform duration-200 hover:scale-110" />
+                }
               </button>
             </div>
-          </div>
 
-          {/* Quick Stats Grid */}
-          <div className="grid grid-cols-2 gap-2 mb-6 p-2.5 bg-zinc-950/40 border border-zinc-800/50 rounded-lg">
-            <div>
-              <span className="text-[10px] text-zinc-500 block uppercase tracking-wider font-mono">Coins</span>
-              <span className="text-sm font-semibold text-amber-500">{formatCompact(build.resources.coins)}</span>
-            </div>
-            <div>
-              <span className="text-[10px] text-zinc-500 block uppercase tracking-wider font-mono">Cells</span>
-              <span className="text-sm font-semibold text-purple-400">{formatCompact(build.resources.cells)}</span>
-            </div>
-            <div>
-              <span className="text-[10px] text-zinc-500 block uppercase tracking-wider font-mono">Stones</span>
-              <span className="text-sm font-semibold text-teal-400">{build.resources.stones}</span>
-            </div>
-            <div>
-              <span className="text-[10px] text-zinc-500 block uppercase tracking-wider font-mono">Runs Logged</span>
-              <span className="text-sm font-semibold text-zinc-300">{runs.length}</span>
-            </div>
-          </div>
-
-          {/* Navigation Links */}
-          <nav className="space-y-1">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveTab(item.id)}
-                  className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium border transition-colors duration-100 touch-manipulation ${
-                    isActive 
-                      ? 'bg-zinc-800 text-white border-zinc-700 shadow-inner' 
-                      : 'border-transparent text-zinc-400 hover:bg-zinc-900/50 hover:text-zinc-200'
-                  }`}
-                >
-                  <Icon className={`w-4 h-4 ${item.color} ${isActive ? 'scale-110' : ''}`} />
-                  <span>{item.name}</span>
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-
-        {/* Labs Status & Warning Banner */}
-        <div className="mt-8 space-y-4">
-          {/* Active Goals HUD */}
-          <TaskHUD />
-
-          {/* Verification Warnings */}
-          {build.verificationFlags.length > 0 && (
-            <div className="flex items-start space-x-2 p-2.5 bg-rose-950/20 border border-rose-800/30 rounded-lg text-xs text-rose-300">
-              <AlertTriangle className="w-4 h-4 shrink-0 text-rose-500 mt-0.5" />
+            {/* Quick Stats Grid */}
+            <div className="grid grid-cols-2 gap-2 mb-6 p-2.5 bg-zinc-950/40 border border-zinc-800/50 rounded-lg">
               <div>
-                <span className="font-semibold block">In-Game Check Required</span>
-                <p className="text-[10px] text-rose-400/80 leading-relaxed mt-0.5">
-                  Some build metrics are marked unverified. Estimates might vary.
-                </p>
+                <span className="text-[10px] text-zinc-500 block uppercase tracking-wider font-mono">Coins</span>
+                <span className="text-sm font-semibold text-amber-500">{formatCompact(build.resources.coins)}</span>
+              </div>
+              <div>
+                <span className="text-[10px] text-zinc-500 block uppercase tracking-wider font-mono">Cells</span>
+                <span className="text-sm font-semibold text-purple-400">{formatCompact(build.resources.cells)}</span>
+              </div>
+              <div>
+                <span className="text-[10px] text-zinc-500 block uppercase tracking-wider font-mono">Stones</span>
+                <span className="text-sm font-semibold text-teal-400">{build.resources.stones}</span>
+              </div>
+              <div>
+                <span className="text-[10px] text-zinc-500 block uppercase tracking-wider font-mono">Runs Logged</span>
+                <span className="text-sm font-semibold text-zinc-300">{runs.length}</span>
               </div>
             </div>
-          )}
 
-          {/* Labs Status */}
-          <div className="p-2.5 bg-zinc-900/50 border border-zinc-800/40 rounded-lg text-xs">
-            <div className="flex justify-between text-[10px] text-zinc-500 mb-1 font-mono uppercase">
-              <span>Lab Allocations</span>
-              <span>{activeBoostsCount}/5</span>
-            </div>
-            <div className="flex space-x-1.5 justify-center py-1">
-              {build.labs.map((lab, i) => (
-                <div 
-                  key={i} 
-                  title={lab.researchId ? `Lab ${i+1}: ${lab.boost}x boost` : `Lab ${i+1}: Idle`}
-                  className={`h-2 w-full rounded-full transition-all duration-300 ${
-                    lab.researchId 
-                      ? lab.boost >= 3 
-                        ? 'bg-amber-500 shadow-sm shadow-amber-500/50 animate-pulse'
-                        : 'bg-emerald-500 shadow-sm shadow-emerald-500/30'
-                      : 'bg-zinc-800'
-                  }`}
-                />
-              ))}
+            {/* Navigation Links */}
+            <nav className="space-y-1">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = activeTab === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setActiveTab(item.id)}
+                    className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium border transition-colors duration-100 touch-manipulation ${
+                      isActive 
+                        ? 'bg-zinc-800 text-white border-zinc-700 shadow-inner' 
+                        : 'border-transparent text-zinc-400 hover:bg-zinc-900/50 hover:text-zinc-200'
+                    }`}
+                  >
+                    <Icon className={`w-4 h-4 ${item.color} ${isActive ? 'scale-110' : ''}`} />
+                    <span>{item.name}</span>
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+
+          {/* Labs Status & Warning Banner */}
+          <div className="mt-8 space-y-4">
+            {/* Active Goals HUD */}
+            <TaskHUD />
+
+            {/* Verification Warnings */}
+            {build.verificationFlags.length > 0 && (
+              <div className="flex items-start space-x-2 p-2.5 bg-rose-950/20 border border-rose-800/30 rounded-lg text-xs text-rose-300">
+                <AlertTriangle className="w-4 h-4 shrink-0 text-rose-500 mt-0.5" />
+                <div>
+                  <span className="font-semibold block">In-Game Check Required</span>
+                  <p className="text-[10px] text-rose-400/80 leading-relaxed mt-0.5">
+                    Some build metrics are marked unverified. Estimates might vary.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Labs Status */}
+            <div className="p-2.5 bg-zinc-900/50 border border-zinc-800/40 rounded-lg text-xs">
+              <div className="flex justify-between text-[10px] text-zinc-500 mb-1 font-mono uppercase">
+                <span>Lab Allocations</span>
+                <span>{activeBoostsCount}/5</span>
+              </div>
+              <div className="flex space-x-1.5 justify-center py-1">
+                {build.labs.map((lab, i) => (
+                  <div 
+                    key={i} 
+                    title={lab.researchId ? `Lab ${i+1}: ${lab.boost}x boost` : `Lab ${i+1}: Idle`}
+                    className={`h-2 w-full rounded-full transition-all duration-300 ${
+                      lab.researchId 
+                        ? lab.boost >= 3 
+                          ? 'bg-amber-500 shadow-sm shadow-amber-500/50 animate-pulse'
+                          : 'bg-emerald-500 shadow-sm shadow-emerald-500/30'
+                        : 'bg-zinc-800'
+                    }`}
+                  />
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      </aside>
+        </aside>
 
-      {/* Main Content Area */}
-      <main className="flex-1 p-4 md:p-8 overflow-y-auto max-w-7xl">
-        <AuthSyncBanner onOpenAuth={handleOpenAuth} />
-        {children}
-      </main>
+        {/* Main Content Area */}
+        <main className="flex-1 p-4 md:p-8 overflow-y-auto max-w-7xl">
+          <AuthSyncBanner onOpenAuth={handleOpenAuth} />
+          {children}
+        </main>
+      </div>
 
       {/* Cloud Auth & Sync Modal */}
       <AuthModal

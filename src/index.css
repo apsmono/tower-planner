@@ -52,6 +52,11 @@ html.light main {
   background-color: #f1f5f9 !important;
 }
 
+html.light header {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
 html.light aside {
   background-color: #ffffff !important;
   border-color: #e2e8f0 !important;
