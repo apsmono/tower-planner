@@ -367,6 +367,19 @@ html.light [class*="bg-zinc-900/60"][class*="border-zinc-800"]:hover {
   border-color: #c7d2fe !important;
 }
 
+/* ── Inline filter pills using bare bg-zinc-900 ──────────── */
+/* Wiki category buttons (without /60 suffix)                 */
+html.light button[class*="bg-zinc-900"]:not([class*="bg-zinc-900/"]):not([class*="bg-indigo-"]) {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #475569 !important;
+}
+
+html.light button[class*="bg-zinc-900"]:not([class*="bg-zinc-900/"]):not([class*="bg-indigo-"]):hover {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
 /* Max Lv. badge in wiki cards */
 html.light [class*="bg-zinc-800"][class*="text-zinc-400"] {
   background-color: #e2e8f0 !important;

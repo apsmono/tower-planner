@@ -316,8 +316,8 @@ export function ResearchQueue() {
                   onClick={() => setWikiCategory(cat.id)}
                   className={`px-2.5 py-1 rounded-md text-[11px] font-mono transition-all flex items-center space-x-1.5 cursor-pointer ${
                     isSelected
-                      ? 'bg-indigo-600 text-white font-semibold shadow-xs shadow-indigo-500/40 dark:shadow-black/20'
-                      : 'bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-800'
+                      ? 'bg-indigo-600 text-white font-semibold shadow-xs shadow-indigo-500/40'
+                      : 'bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
                   }`}
                 >
                   <span>{cat.icon}</span>
@@ -334,7 +334,7 @@ export function ResearchQueue() {
               return (
                 <div
                   key={lab.id}
-                  className="p-3 bg-white dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-800/80 rounded-lg flex flex-col justify-between space-y-2 hover:border-indigo-300 dark:hover:border-zinc-700 transition-colors"
+                  className="p-3 bg-zinc-900/60 border border-zinc-800/80 rounded-lg flex flex-col justify-between space-y-2 hover:border-zinc-700 transition-colors"
                 >
                   <div>
                     <div className="flex items-start justify-between gap-2">
@@ -453,8 +453,8 @@ export function ResearchQueue() {
             onClick={() => setCurrencyMode('split')}
             className={`px-3 py-1.5 rounded-lg text-xs font-mono uppercase tracking-wider cursor-pointer transition-all ${
               currencyMode === 'split' 
-                ? 'bg-indigo-600 text-white font-semibold shadow shadow-indigo-500/40 dark:shadow-black/20' 
-                : 'bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-900'
+                ? 'bg-indigo-600 text-white font-semibold shadow shadow-indigo-500/40' 
+                : 'bg-zinc-950 border border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900'
             }`}
           >
             Split (Score / Day)
@@ -463,8 +463,8 @@ export function ResearchQueue() {
             onClick={() => setCurrencyMode('unified')}
             className={`px-3 py-1.5 rounded-lg text-xs font-mono uppercase tracking-wider cursor-pointer transition-all ${
               currencyMode === 'unified' 
-                ? 'bg-indigo-600 text-white font-semibold shadow shadow-indigo-500/40 dark:shadow-black/20' 
-                : 'bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-900'
+                ? 'bg-indigo-600 text-white font-semibold shadow shadow-indigo-500/40' 
+                : 'bg-zinc-950 border border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900'
             }`}
           >
             Unified (Score / Coin)
@@ -534,8 +534,8 @@ export function ResearchQueue() {
                 onClick={() => setActiveCategory(cat.id)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-all flex items-center space-x-1.5 cursor-pointer ${
                   isSelected
-                    ? 'bg-indigo-600 text-white font-semibold shadow-xs shadow-indigo-500/40 dark:shadow-black/20'
-                    : 'bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-900'
+                    ? 'bg-indigo-600 text-white font-semibold shadow-xs shadow-indigo-500/40'
+                    : 'bg-zinc-950 border border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900'
                 }`}
               >
                 <span>{cat.icon}</span>
