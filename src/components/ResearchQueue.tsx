@@ -316,7 +316,7 @@ export function ResearchQueue() {
                   onClick={() => setWikiCategory(cat.id)}
                   className={`px-2.5 py-1 rounded-md text-[11px] font-mono transition-all flex items-center space-x-1.5 cursor-pointer ${
                     isSelected
-                      ? 'bg-indigo-600 text-white font-semibold shadow-xs'
+                      ? 'bg-indigo-600 text-white font-semibold shadow-xs shadow-indigo-500/40 dark:shadow-black/20'
                       : 'bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-800'
                   }`}
                 >
@@ -453,7 +453,7 @@ export function ResearchQueue() {
             onClick={() => setCurrencyMode('split')}
             className={`px-3 py-1.5 rounded-lg text-xs font-mono uppercase tracking-wider cursor-pointer transition-all ${
               currencyMode === 'split' 
-                ? 'bg-indigo-600 text-white font-semibold shadow' 
+                ? 'bg-indigo-600 text-white font-semibold shadow shadow-indigo-500/40 dark:shadow-black/20' 
                 : 'bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-900'
             }`}
           >
@@ -463,7 +463,7 @@ export function ResearchQueue() {
             onClick={() => setCurrencyMode('unified')}
             className={`px-3 py-1.5 rounded-lg text-xs font-mono uppercase tracking-wider cursor-pointer transition-all ${
               currencyMode === 'unified' 
-                ? 'bg-indigo-600 text-white font-semibold shadow' 
+                ? 'bg-indigo-600 text-white font-semibold shadow shadow-indigo-500/40 dark:shadow-black/20' 
                 : 'bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-900'
             }`}
           >
@@ -534,14 +534,14 @@ export function ResearchQueue() {
                 onClick={() => setActiveCategory(cat.id)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-all flex items-center space-x-1.5 cursor-pointer ${
                   isSelected
-                    ? 'bg-indigo-600 text-white font-semibold shadow-xs'
+                    ? 'bg-indigo-600 text-white font-semibold shadow-xs shadow-indigo-500/40 dark:shadow-black/20'
                     : 'bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-900'
                 }`}
               >
                 <span>{cat.icon}</span>
                 <span>{cat.label}</span>
                 <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
-                  isSelected ? 'bg-indigo-800 text-indigo-100' : 'bg-slate-100 dark:bg-zinc-900 text-slate-500 dark:text-zinc-500'
+                  isSelected ? 'bg-indigo-700 text-indigo-100' : 'bg-slate-100 dark:bg-zinc-900 text-slate-500 dark:text-zinc-500'
                 }`}>
                   {count}
                 </span>

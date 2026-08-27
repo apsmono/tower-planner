@@ -556,8 +556,8 @@ export function BuildState() {
                   onClick={() => setUwFilter('all')}
                   className={`px-3 py-1.5 rounded transition-all ${
                     uwFilter === 'all'
-                      ? 'bg-indigo-600 text-white font-semibold shadow'
-                      : 'text-zinc-400 hover:text-zinc-200'
+                      ? 'bg-indigo-600 text-white font-semibold shadow shadow-indigo-500/40 dark:shadow-black/20'
+                      : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800'
                   }`}
                 >
                   All ({build.ultimateWeapons.length})
@@ -567,8 +567,8 @@ export function BuildState() {
                   onClick={() => setUwFilter('acquired')}
                   className={`px-3 py-1.5 rounded transition-all ${
                     uwFilter === 'acquired'
-                      ? 'bg-indigo-600 text-white font-semibold shadow'
-                      : 'text-zinc-400 hover:text-zinc-200'
+                      ? 'bg-indigo-600 text-white font-semibold shadow shadow-indigo-500/40 dark:shadow-black/20'
+                      : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800'
                   }`}
                 >
                   Acquired ({unlockedCount})
@@ -578,8 +578,8 @@ export function BuildState() {
                   onClick={() => setUwFilter('locked')}
                   className={`px-3 py-1.5 rounded transition-all ${
                     uwFilter === 'locked'
-                      ? 'bg-indigo-600 text-white font-semibold shadow'
-                      : 'text-zinc-400 hover:text-zinc-200'
+                      ? 'bg-indigo-600 text-white font-semibold shadow shadow-indigo-500/40 dark:shadow-black/20'
+                      : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800'
                   }`}
                 >
                   Locked ({build.ultimateWeapons.length - unlockedCount})
@@ -1014,8 +1014,8 @@ export function BuildState() {
                     onClick={() => setNewGoalType('research')}
                     className={`flex-1 py-1.5 rounded text-center transition-all ${
                       newGoalType === 'research' 
-                        ? 'bg-indigo-600 text-white font-semibold shadow' 
-                        : 'text-zinc-500 hover:text-zinc-300'
+                        ? 'bg-indigo-600 text-white font-semibold shadow shadow-indigo-500/40 dark:shadow-black/20' 
+                        : 'text-slate-500 dark:text-zinc-500 hover:text-slate-800 dark:hover:text-zinc-300'
                     }`}
                   >
                     Research
@@ -1025,8 +1025,8 @@ export function BuildState() {
                     onClick={() => setNewGoalType('resource')}
                     className={`flex-1 py-1.5 rounded text-center transition-all ${
                       newGoalType === 'resource' 
-                        ? 'bg-indigo-600 text-white font-semibold shadow' 
-                        : 'text-zinc-500 hover:text-zinc-300'
+                        ? 'bg-indigo-600 text-white font-semibold shadow shadow-indigo-500/40 dark:shadow-black/20' 
+                        : 'text-slate-500 dark:text-zinc-500 hover:text-slate-800 dark:hover:text-zinc-300'
                     }`}
                   >
                     Resource
