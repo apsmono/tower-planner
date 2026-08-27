@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <radialGradient id="coin-grad" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#fde047"/>
+      <stop offset="60%" stop-color="#eab308"/>
+      <stop offset="100%" stop-color="#ca8a04"/>
+    </radialGradient>
+    <filter id="glow-gold" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#eab308" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+  <g filter="url(#glow-gold)">
+    <circle cx="32" cy="32" r="28" fill="url(#coin-grad)" stroke="#fef08a" stroke-width="2"/>
+    <circle cx="32" cy="32" r="22" fill="none" stroke="#a16207" stroke-width="1.5" stroke-dasharray="3 2"/>
+    <circle cx="32" cy="32" r="14" fill="#a16207" fill-opacity="0.2" stroke="#fde047" stroke-width="1.5"/>
+    <polygon points="32,20 38,36 26,36" fill="#fef08a"/>
+    <rect x="30" y="36" width="4" height="8" fill="#fef08a"/>
+  </g>
+</svg>

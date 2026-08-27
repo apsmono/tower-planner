@@ -13,6 +13,7 @@ import {
   SlidersHorizontal,
   X
 } from 'lucide-react';
+import { CurrencyIcon } from './CurrencyIcon';
 
 export function ImportRuns() {
   const storeRuns = useStore((state) => state.runs);
@@ -364,11 +365,17 @@ export function ImportRuns() {
                         <span className="text-sm font-semibold text-white">{preview.wave.toLocaleString()}</span>
                       </div>
                       <div>
-                        <span className="text-[10px] text-zinc-500 font-mono uppercase block">Coins</span>
+                        <span className="text-[10px] text-zinc-500 font-mono uppercase flex items-center gap-1">
+                          <CurrencyIcon currency="coins" size="xs" />
+                          Coins
+                        </span>
                         <span className="text-sm font-semibold text-amber-500">{formatCompact(preview.fields.coinsEarned || 0)}</span>
                       </div>
                       <div>
-                        <span className="text-[10px] text-zinc-500 font-mono uppercase block">Cells</span>
+                        <span className="text-[10px] text-zinc-500 font-mono uppercase flex items-center gap-1">
+                          <CurrencyIcon currency="cells" size="xs" />
+                          Cells
+                        </span>
                         <span className="text-sm font-semibold text-purple-400">{formatCompact(preview.fields.cellsEarned || 0)}</span>
                       </div>
                       <div>
@@ -662,8 +669,18 @@ export function ImportRuns() {
                   <th className="p-3">Tier</th>
                   <th className="p-3">Wave</th>
                   <th className="p-3">Real Length</th>
-                  <th className="p-3">Coins / Hr</th>
-                  <th className="p-3">Cells / Hr</th>
+                  <th className="p-3">
+                    <span className="inline-flex items-center gap-1">
+                      <CurrencyIcon currency="coins" size="xs" />
+                      <span>Coins / Hr</span>
+                    </span>
+                  </th>
+                  <th className="p-3">
+                    <span className="inline-flex items-center gap-1">
+                      <CurrencyIcon currency="cells" size="xs" />
+                      <span>Cells / Hr</span>
+                    </span>
+                  </th>
                   <th className="p-3">Dissonance</th>
                   <th className="p-3 text-center">Status</th>
                   <th className="p-3 text-center">Actions</th>
@@ -703,10 +720,16 @@ export function ImportRuns() {
                         {formatDuration(run.realTimeSec)}
                       </td>
                       <td className="p-3 text-amber-500 font-semibold font-mono">
-                        {formatCompact(coinsHr)}
+                        <span className="inline-flex items-center gap-1">
+                          <CurrencyIcon currency="coins" size="xs" />
+                          <span>{formatCompact(coinsHr)}</span>
+                        </span>
                       </td>
                       <td className="p-3 text-purple-400 font-semibold font-mono">
-                        {formatCompact(cellsHr)}
+                        <span className="inline-flex items-center gap-1">
+                          <CurrencyIcon currency="cells" size="xs" />
+                          <span>{formatCompact(cellsHr)}</span>
+                        </span>
                       </td>
                       <td className="p-3 font-mono text-zinc-400">
                         x{run.dissonanceMultiplier.toFixed(2)}

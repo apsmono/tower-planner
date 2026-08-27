@@ -1,5 +1,6 @@
 import { useStore, type PlannerTask } from '../domain/store';
-import { Trash2, CheckCircle2 } from 'lucide-react';
+import { CurrencyIcon } from './CurrencyIcon';
+import { Trash2, CheckCircle2, FlaskConical, Target } from 'lucide-react';
 
 export function TaskHUD() {
   const tasks = useStore((state) => state.tasks);
@@ -25,7 +26,7 @@ export function TaskHUD() {
       return {
         label: `${formatValue(current)} / ${formatValue(target)}`,
         pct,
-        icon: '💎'
+        iconEl: <CurrencyIcon currency={task.targetResource} size="xs" />
       };
     }
     if (task.type === 'research' && task.targetResearchId && task.targetLevel) {
@@ -36,10 +37,14 @@ export function TaskHUD() {
       return {
         label: `Lv.${currentLevel} / Lv.${targetLevel}`,
         pct,
-        icon: '🔬'
+        iconEl: <FlaskConical className="w-3.5 h-3.5 text-indigo-400" />
       };
     }
-    return { label: 'In Progress', pct: 50, icon: '🎯' };
+    return { 
+      label: 'In Progress', 
+      pct: 50, 
+      iconEl: <Target className="w-3.5 h-3.5 text-cyan-400" /> 
+    };
   };
 
   return (
@@ -57,19 +62,20 @@ export function TaskHUD() {
       ) : (
         <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1 scrollbar-thin">
           {activeTasks.map((task) => {
-            const { label, pct, icon } = getProgressInfo(task);
+            const { label, pct, iconEl } = getProgressInfo(task);
             return (
               <div 
                 key={task.id} 
                 className="p-2.5 bg-zinc-900/50 border border-zinc-800/60 hover:border-zinc-700/80 rounded-lg relative group transition-all"
               >
                 <div className="flex justify-between items-start mb-1.5">
-                  <div className="pr-4">
-                    <span className="text-[11px] font-semibold text-zinc-200 block truncate leading-tight" title={task.name}>
-                      {icon} {task.name}
+                  <div className="pr-4 flex-1">
+                    <span className="text-[11px] font-semibold text-zinc-200 flex items-center gap-1.5 truncate leading-tight" title={task.name}>
+                      {iconEl}
+                      <span className="truncate">{task.name}</span>
                     </span>
                     {task.notes && (
-                      <span className="text-[9px] text-zinc-500 block truncate leading-normal" title={task.notes}>
+                      <span className="text-[9px] text-zinc-500 block truncate leading-normal mt-0.5" title={task.notes}>
                         {task.notes}
                       </span>
                     )}

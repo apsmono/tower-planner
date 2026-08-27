@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useStore } from '../domain/store';
 import { getModelCells, BOOST_COSTS } from '../domain/cellModel';
+import { CurrencyIcon } from './CurrencyIcon';
 import { 
+  Gauge, 
   Clock, 
   AlertTriangle, 
-  Gauge, 
-  Activity,
   Calculator
 } from 'lucide-react';
 
@@ -156,11 +156,12 @@ export function CellBudget() {
         <div className="p-6 glass-panel rounded-xl flex flex-col justify-between">
           <div className="flex justify-between items-start">
             <span className="text-xs text-zinc-500 font-mono uppercase tracking-wider">Daily Cell Income</span>
-            <Activity className="w-5 h-5 text-emerald-400" />
+            <CurrencyIcon currency="cells" size="sm" />
           </div>
           <div className="mt-4">
             <div className="flex items-baseline space-x-2">
-              <span className="text-3xl font-extrabold text-white font-mono">
+              <span className="text-3xl font-extrabold text-white font-mono flex items-center gap-1.5">
+                <CurrencyIcon currency="cells" size="md" />
                 {formatCompact(effectiveIncome)}
               </span>
               <span className="text-sm font-semibold text-zinc-400 font-mono">
@@ -185,7 +186,8 @@ export function CellBudget() {
           </div>
           <div className="mt-4">
             <div className="flex items-baseline space-x-2">
-              <span className="text-3xl font-extrabold text-white font-mono">
+              <span className="text-3xl font-extrabold text-white font-mono flex items-center gap-1.5">
+                <CurrencyIcon currency="cells" size="md" />
                 {formatCompact(dailyBurn)}
               </span>
               <span className="text-sm font-semibold text-zinc-400 font-mono">
@@ -233,7 +235,10 @@ export function CellBudget() {
                 <span className="text-xs font-semibold text-zinc-200 font-mono">Lab {index + 1} Boost</span>
                 
                 <div className="flex items-center space-x-4">
-                  <span className="text-[11px] text-zinc-500 font-mono">{(BOOST_COSTS[lab.boost] || 0).toLocaleString()} cells/day</span>
+                  <span className="text-[11px] text-zinc-400 font-mono flex items-center gap-1">
+                    <CurrencyIcon currency="cells" size="xs" />
+                    <span>{(BOOST_COSTS[lab.boost] || 0).toLocaleString()} cells/day</span>
+                  </span>
                   <select
                     value={lab.boost}
                     onChange={(e) => handleBoostSelect(index, e.target.value)}

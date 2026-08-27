@@ -3,8 +3,9 @@ import { useStore, type Run, type ResearchEntry } from '../domain/store';
 import { BOOST_COSTS } from '../domain/cellModel';
 import { LAB_CATEGORIES, type LabCategory } from '../data/labCatalog';
 import { LabDatabase } from '../domain/labDatabase';
+import { CurrencyIcon } from './CurrencyIcon';
 import { 
-  ListOrdered, 
+  FlaskConical, 
   AlertTriangle, 
   Check, 
   Pin,
@@ -258,7 +259,7 @@ export function ResearchQueue() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-white flex items-center space-x-2.5">
-            <ListOrdered className="w-6 h-6 text-indigo-400" />
+            <FlaskConical className="w-6 h-6 text-indigo-400" />
             <span>Research Queue</span>
           </h2>
           <p className="text-zinc-400 text-sm mt-1">
@@ -562,10 +563,20 @@ export function ResearchQueue() {
                   <th className="p-3">Delta (Δ)</th>
                   <th className="p-3">Channel Share</th>
                   <th className="p-3">Total Impact</th>
-                  <th className="p-3">Coin Cost</th>
+                  <th className="p-3">
+                    <span className="inline-flex items-center gap-1">
+                      <CurrencyIcon currency="coins" size="xs" />
+                      <span>Coin Cost</span>
+                    </span>
+                  </th>
                   <th className="p-3">Days Pre-Boost</th>
                   <th className="p-3">Effective Days</th>
-                  <th className="p-3">Boost Cell Cost</th>
+                  <th className="p-3">
+                    <span className="inline-flex items-center gap-1">
+                      <CurrencyIcon currency="cells" size="xs" />
+                      <span>Boost Cell Cost</span>
+                    </span>
+                  </th>
                   <th className="p-3">Impact / Slot-Day</th>
                   <th className="p-3">Buyable?</th>
                 </tr>
@@ -573,8 +584,18 @@ export function ResearchQueue() {
                 <tr>
                   <th className="p-3">Research Name</th>
                   <th className="p-3">Total Impact</th>
-                  <th className="p-3">Coin Cost</th>
-                  <th className="p-3">Boost Cell Cost</th>
+                  <th className="p-3">
+                    <span className="inline-flex items-center gap-1">
+                      <CurrencyIcon currency="coins" size="xs" />
+                      <span>Coin Cost</span>
+                    </span>
+                  </th>
+                  <th className="p-3">
+                    <span className="inline-flex items-center gap-1">
+                      <CurrencyIcon currency="cells" size="xs" />
+                      <span>Boost Cell Cost</span>
+                    </span>
+                  </th>
                   <th className="p-3">Cell Cost Converted</th>
                   <th className="p-3">Unified Cost Equiv</th>
                   <th className="p-3">Impact / B Coins Equiv</th>
@@ -651,14 +672,24 @@ export function ResearchQueue() {
                       <td className="p-3 font-mono font-semibold text-indigo-400">
                         +{(item.totalImpact * 100).toFixed(3)}%
                       </td>
-                      <td className="p-3 font-mono text-amber-500">{formatCompact(item.coinCost)}</td>
+                      <td className="p-3 font-mono text-amber-500">
+                        <span className="inline-flex items-center gap-1">
+                          <CurrencyIcon currency="coins" size="xs" />
+                          <span>{formatCompact(item.coinCost)}</span>
+                        </span>
+                      </td>
                       <td className="p-3 font-mono text-zinc-400">
                         {(item.baseTimeSeconds / 86400).toFixed(1)}d
                       </td>
                       <td className="p-3 font-mono font-semibold text-zinc-200">
                         {item.effectiveDays.toFixed(1)}d
                       </td>
-                      <td className="p-3 font-mono text-purple-400">{formatCompact(item.boostCellCost)}</td>
+                      <td className="p-3 font-mono text-purple-400">
+                        <span className="inline-flex items-center gap-1">
+                          <CurrencyIcon currency="cells" size="xs" />
+                          <span>{formatCompact(item.boostCellCost)}</span>
+                        </span>
+                      </td>
                       <td className="p-3 font-mono font-bold text-white text-base">
                         {item.score.toFixed(4)}
                       </td>
@@ -720,8 +751,18 @@ export function ResearchQueue() {
                     <td className="p-3 font-mono font-semibold text-indigo-400">
                       +{(item.totalImpact * 100).toFixed(3)}%
                     </td>
-                    <td className="p-3 font-mono text-amber-500">{formatCompact(item.coinCost)}</td>
-                    <td className="p-3 font-mono text-purple-400">{formatCompact(item.boostCellCost)}</td>
+                    <td className="p-3 font-mono text-amber-500">
+                      <span className="inline-flex items-center gap-1">
+                        <CurrencyIcon currency="coins" size="xs" />
+                        <span>{formatCompact(item.coinCost)}</span>
+                      </span>
+                    </td>
+                    <td className="p-3 font-mono text-purple-400">
+                      <span className="inline-flex items-center gap-1">
+                        <CurrencyIcon currency="cells" size="xs" />
+                        <span>{formatCompact(item.boostCellCost)}</span>
+                      </span>
+                    </td>
                     <td className="p-3 font-mono text-zinc-400">{formatCompact(cellCostConverted)}</td>
                     <td className="p-3 font-mono font-semibold text-white">{formatCompact(unifiedCost)}</td>
                     <td className="p-3 font-mono font-bold text-indigo-400 text-base">

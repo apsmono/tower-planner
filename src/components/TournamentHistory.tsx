@@ -1,9 +1,8 @@
 import { useStore } from '../domain/store';
+import { CurrencyIcon } from './CurrencyIcon';
 import { 
   Trophy, 
   TrendingUp, 
-  Gem,
-  Zap,
   Key
 } from 'lucide-react';
 import { 
@@ -23,14 +22,10 @@ export function TournamentHistory() {
 
   // Filter only tournament runs
   const tournamentRuns = runs
-    .filter((r) => r.runType === 'tournament')
-    .sort((a, b) => {
-      const dateA = a.battleDate ? Date.parse(a.battleDate) : 0;
-      const dateB = b.battleDate ? Date.parse(b.battleDate) : 0;
-      return dateA - dateB;
-    });
+    .filter((r) => r.runType === 'tournament' || r.tierSuffix === '+')
+    .sort((a, b) => new Date(a.battleDate || a.importedAt).getTime() - new Date(b.battleDate || b.importedAt).getTime());
 
-  // Total economic rewards from tournaments
+  // Aggregate totals
   const totals = tournamentRuns.reduce((acc, r) => {
     const rewards = getTournamentRewards(r.tournament?.bracket || 'Champion', r.tournament?.rank ?? null);
     acc.gems += rewards.gems;
@@ -39,20 +34,18 @@ export function TournamentHistory() {
     return acc;
   }, { gems: 0, stones: 0, keys: 0 });
 
-  // Format helpers
+  // Suffix numbers helper
   const formatCompact = (num: number): string => {
-    if (num >= 1e12) return (num / 1e12).toFixed(2) + 'T';
-    if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
     if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
     if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
     return num.toLocaleString();
   };
 
-  // Wave progression chart data
   const chartData = tournamentRuns.map((r) => ({
-    date: r.battleDate ? r.battleDate.split(',')[0] : new Date(r.importedAt).toLocaleDateString(undefined, {month: 'short', day: 'numeric'}),
+    date: r.battleDate ? r.battleDate.slice(5) : new Date(r.importedAt).toLocaleDateString(undefined, { month: 'numeric', day: 'numeric' }),
     wave: r.wave,
-    bracket: r.tournament?.bracket || 'Champion',
+    tier: `T${r.tier}+`,
+    rank: r.tournament?.rank ?? 'N/A'
   }));
 
   return (
@@ -61,22 +54,22 @@ export function TournamentHistory() {
       <div>
         <h2 className="text-2xl font-bold tracking-tight text-white">Tournament History</h2>
         <p className="text-zinc-400 text-sm mt-1">
-          Track tournament waves and ranks over time, and see tournament economic yields.
+          Track tournament waves, rank brackets, and rewards over time.
         </p>
       </div>
 
-      {/* Overview stats cards */}
+      {/* Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="p-5 glass-panel rounded-xl flex items-center space-x-4 glow-amber">
-          <Gem className="text-amber-400 w-8 h-8 shrink-0" />
+        <div className="p-5 glass-panel rounded-xl flex items-center space-x-4 glow-emerald">
+          <CurrencyIcon currency="gems" size="xl" />
           <div>
             <span className="text-[10px] text-zinc-500 font-mono uppercase block">Total Tourney Gems</span>
             <span className="text-lg font-bold text-white font-mono">{formatCompact(totals.gems)}</span>
           </div>
         </div>
 
-        <div className="p-5 glass-panel rounded-xl flex items-center space-x-4 glow-emerald">
-          <Zap className="text-emerald-400 w-8 h-8 shrink-0" />
+        <div className="p-5 glass-panel rounded-xl flex items-center space-x-4 glow-teal">
+          <CurrencyIcon currency="stones" size="xl" />
           <div>
             <span className="text-[10px] text-zinc-500 font-mono uppercase block">Total Tourney Stones</span>
             <span className="text-lg font-bold text-white font-mono">{formatCompact(totals.stones)}</span>
@@ -150,8 +143,18 @@ export function TournamentHistory() {
                   <th className="p-3">Rank Placing</th>
                   <th className="p-3">Tier</th>
                   <th className="p-3">Wave Reached</th>
-                  <th className="p-3 text-amber-500">Gems</th>
-                  <th className="p-3 text-emerald-500">Stones</th>
+                  <th className="p-3">
+                    <span className="inline-flex items-center gap-1 text-emerald-400">
+                      <CurrencyIcon currency="gems" size="xs" />
+                      <span>Gems</span>
+                    </span>
+                  </th>
+                  <th className="p-3">
+                    <span className="inline-flex items-center gap-1 text-teal-400">
+                      <CurrencyIcon currency="stones" size="xs" />
+                      <span>Stones</span>
+                    </span>
+                  </th>
                   <th className="p-3 text-indigo-400">Keys</th>
                 </tr>
               </thead>
@@ -177,11 +180,17 @@ export function TournamentHistory() {
                       <td className="p-3 font-semibold font-mono text-white">
                         {run.wave.toLocaleString()}
                       </td>
-                      <td className="p-3 text-amber-500 font-mono font-semibold">
-                        {rewards.gems.toLocaleString()}
-                      </td>
                       <td className="p-3 text-emerald-400 font-mono font-semibold">
-                        {rewards.stones.toLocaleString()}
+                        <span className="inline-flex items-center gap-1">
+                          <CurrencyIcon currency="gems" size="xs" />
+                          <span>{rewards.gems.toLocaleString()}</span>
+                        </span>
+                      </td>
+                      <td className="p-3 text-teal-400 font-mono font-semibold">
+                        <span className="inline-flex items-center gap-1">
+                          <CurrencyIcon currency="stones" size="xs" />
+                          <span>{rewards.stones.toLocaleString()}</span>
+                        </span>
                       </td>
                       <td className="p-3 text-indigo-400 font-mono font-semibold">
                         {rewards.keys > 0 ? rewards.keys.toLocaleString() : '-'}

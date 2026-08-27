@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useStore, type LabSlot, UW_CONFIGS, getStatLevels, type UWUpgradeStatConfig } from '../domain/store';
+import { CurrencyIcon } from './CurrencyIcon';
 import { 
   Sliders, 
   AlertTriangle, 
@@ -328,41 +329,65 @@ export function BuildState() {
               <span>In-Game Currencies</span>
             </h3>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               <div>
-                <label className="text-xs text-zinc-500 block mb-1">Coins Balance</label>
+                <label className="text-xs text-zinc-400 font-medium flex items-center gap-1.5 mb-1 font-mono">
+                  <CurrencyIcon currency="coins" size="xs" />
+                  <span>Coins Balance</span>
+                </label>
                 <input
                   type="number"
                   value={build.resources.coins}
                   onChange={(e) => handleResourceChange('coins', e.target.value)}
-                  className="w-full bg-zinc-950/60 border border-zinc-800 rounded p-2 text-sm text-zinc-100 font-mono focus:border-indigo-500 focus:outline-none"
+                  className="w-full bg-zinc-950/60 border border-zinc-800 rounded p-2 text-sm text-amber-400 font-mono focus:border-amber-500 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="text-xs text-zinc-500 block mb-1">Cells Balance</label>
+                <label className="text-xs text-zinc-400 font-medium flex items-center gap-1.5 mb-1 font-mono">
+                  <CurrencyIcon currency="cells" size="xs" />
+                  <span>Cells Balance</span>
+                </label>
                 <input
                   type="number"
                   value={build.resources.cells}
                   onChange={(e) => handleResourceChange('cells', e.target.value)}
-                  className="w-full bg-zinc-950/60 border border-zinc-800 rounded p-2 text-sm text-zinc-100 font-mono focus:border-indigo-500 focus:outline-none"
+                  className="w-full bg-zinc-950/60 border border-zinc-800 rounded p-2 text-sm text-purple-400 font-mono focus:border-purple-500 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="text-xs text-zinc-500 block mb-1">Gems</label>
+                <label className="text-xs text-zinc-400 font-medium flex items-center gap-1.5 mb-1 font-mono">
+                  <CurrencyIcon currency="gems" size="xs" />
+                  <span>Gems</span>
+                </label>
                 <input
                   type="number"
                   value={build.resources.gems}
                   onChange={(e) => handleResourceChange('gems', e.target.value)}
-                  className="w-full bg-zinc-950/60 border border-zinc-800 rounded p-2 text-sm text-zinc-100 font-mono focus:border-indigo-500 focus:outline-none"
+                  className="w-full bg-zinc-950/60 border border-zinc-800 rounded p-2 text-sm text-emerald-400 font-mono focus:border-emerald-500 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="text-xs text-zinc-500 block mb-1">Stones</label>
+                <label className="text-xs text-zinc-400 font-medium flex items-center gap-1.5 mb-1 font-mono">
+                  <CurrencyIcon currency="stones" size="xs" />
+                  <span>Power Stones</span>
+                </label>
                 <input
                   type="number"
                   value={build.resources.stones}
                   onChange={(e) => handleResourceChange('stones', e.target.value)}
-                  className="w-full bg-zinc-950/60 border border-zinc-800 rounded p-2 text-sm text-zinc-100 font-mono focus:border-indigo-500 focus:outline-none"
+                  className="w-full bg-zinc-950/60 border border-zinc-800 rounded p-2 text-sm text-teal-400 font-mono focus:border-teal-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-zinc-400 font-medium flex items-center gap-1.5 mb-1 font-mono">
+                  <CurrencyIcon currency="shards" size="xs" />
+                  <span>Reroll Shards</span>
+                </label>
+                <input
+                  type="number"
+                  value={build.resources.shards || 0}
+                  onChange={(e) => handleResourceChange('shards', e.target.value)}
+                  className="w-full bg-zinc-950/60 border border-zinc-800 rounded p-2 text-sm text-purple-400 font-mono focus:border-purple-500 focus:outline-none"
                 />
               </div>
             </div>

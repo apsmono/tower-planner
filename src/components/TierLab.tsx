@@ -1,9 +1,9 @@
 import { useStore } from '../domain/store';
 import { getModelCells } from '../domain/cellModel';
+import { CurrencyIcon } from './CurrencyIcon';
 import { 
   TrendingUp, 
   HelpCircle, 
- 
   CheckCircle,
   XCircle,
   Layers
@@ -131,8 +131,18 @@ export function TierLab() {
                   <th className="p-3 text-center">Runs (n)</th>
                   <th className="p-3">Mean Wave</th>
                   <th className="p-3">Observed Decay</th>
-                  <th className="p-3">Coins / Hr</th>
-                  <th className="p-3">Cells / Hr</th>
+                  <th className="p-3">
+                    <span className="inline-flex items-center gap-1">
+                      <CurrencyIcon currency="coins" size="xs" />
+                      <span>Coins / Hr</span>
+                    </span>
+                  </th>
+                  <th className="p-3">
+                    <span className="inline-flex items-center gap-1">
+                      <CurrencyIcon currency="cells" size="xs" />
+                      <span>Cells / Hr</span>
+                    </span>
+                  </th>
                   <th className="p-3">Run length</th>
                   <th className="p-3">Verdict / Recommendation</th>
                 </tr>
@@ -187,8 +197,18 @@ export function TierLab() {
                       <td className={`p-3 font-mono ${isDecayExceeded ? 'text-rose-400 font-bold' : 'text-zinc-400'}`}>
                         {decayText}
                       </td>
-                      <td className="p-3 text-amber-500 font-mono font-semibold">{formatCompact(stat.meanCoinsHr)}</td>
-                      <td className="p-3 text-purple-400 font-mono font-semibold">{formatCompact(stat.meanCellsHr)}</td>
+                      <td className="p-3 text-amber-500 font-mono font-semibold">
+                        <span className="inline-flex items-center gap-1">
+                          <CurrencyIcon currency="coins" size="xs" />
+                          <span>{formatCompact(stat.meanCoinsHr)}</span>
+                        </span>
+                      </td>
+                      <td className="p-3 text-purple-400 font-mono font-semibold">
+                        <span className="inline-flex items-center gap-1">
+                          <CurrencyIcon currency="cells" size="xs" />
+                          <span>{formatCompact(stat.meanCellsHr)}</span>
+                        </span>
+                      </td>
                       <td className="p-3 text-zinc-400 font-mono text-xs">{formatDuration(stat.meanRunLength)}</td>
                       <td className="p-3">
                         <div className={`flex items-center space-x-1.5 text-xs ${recColor}`}>

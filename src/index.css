@@ -110,11 +110,28 @@ html.light [class*="text-zinc-300"] {
 }
 
 html.light [class*="text-zinc-400"] {
-  color: #64748b !important;
+  color: #475569 !important;
 }
 
 html.light [class*="text-zinc-500"] {
-  color: #94a3b8 !important;
+  color: #64748b !important;
+}
+
+/* ── Purple text overrides for light mode ─────────────────── */
+html.light .text-purple-400,
+html.light [class*="text-purple-400"],
+html.light [class*="text-purple-300"] {
+  color: #7e22ce !important;
+}
+
+html.light [class*="text-purple-500"] {
+  color: #6b21a8 !important;
+}
+
+/* ── Currency Icons Light Mode Filter ─────────────────────── */
+html.light img[src*="/assets/currencies/"],
+html.light picture img {
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.35)) drop-shadow(0 0 1px rgba(0, 0, 0, 0.6)) contrast(1.15) brightness(0.92);
 }
 
 /* ── Inputs / forms ───────────────────────────────────────── */
@@ -607,10 +624,42 @@ html.light [class*="bg-zinc-900/60"][class*="rounded-xl"] {
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04) !important;
 }
 
-/* ── Teal & Emerald & Amber accents in light mode ─────────── */
+/* ── Teal & Emerald & Amber & Purple accents in light mode ─── */
 html.light .text-teal-400,
-html.light [class*="text-teal-400"] {
+html.light [class*="text-teal-400"],
+html.light [class*="text-teal-300"] {
   color: #0f766e !important;
+}
+
+html.light .text-emerald-400,
+html.light [class*="text-emerald-400"] {
+  color: #047857 !important;
+}
+
+html.light .text-amber-500,
+html.light [class*="text-amber-500"],
+html.light [class*="text-amber-600"] {
+  color: #b45309 !important;
+}
+
+html.light [class*="bg-teal-950"] {
+  background-color: #f0fdfa !important;
+  border-color: #99f6e4 !important;
+}
+
+html.light [class*="bg-amber-950"] {
+  background-color: #fffbeb !important;
+  border-color: #fde68a !important;
+}
+
+html.light [class*="bg-emerald-950"] {
+  background-color: #ecfdf5 !important;
+  border-color: #a7f3d0 !important;
+}
+
+html.light [class*="bg-purple-950"] {
+  background-color: #faf5ff !important;
+  border-color: #e9d5ff !important;
 }
 
 html.light [class*="bg-teal-500/10"] {

@@ -4,10 +4,11 @@ import { TaskHUD } from './TaskHUD';
 import { AuthSyncBanner } from './AuthSyncBanner';
 import { AuthModal } from './AuthModal';
 import { ThemeToggle } from './ThemeToggle';
+import { CurrencyIcon } from './CurrencyIcon';
 import { 
   History, 
   FlaskConical, 
-  ListOrdered, 
+  TrendingUp, 
   Sliders, 
   Trophy, 
   AlertTriangle,
@@ -28,7 +29,6 @@ interface LayoutProps {
 
 export function Layout({ activeTab, setActiveTab, children }: LayoutProps) {
   const build = useStore((state) => state.build);
-  const runs = useStore((state) => state.runs);
   const user = useStore((state) => state.user);
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -50,8 +50,8 @@ export function Layout({ activeTab, setActiveTab, children }: LayoutProps) {
 
   const navItems = [
     { id: 'runs' as TabId, name: 'Import & Runs', icon: History, color: 'text-blue-400 hover:text-blue-300' },
-    { id: 'tier-lab' as TabId, name: 'Tier Lab', icon: FlaskConical, color: 'text-indigo-400 hover:text-indigo-300' },
-    { id: 'research-queue' as TabId, name: 'Research Queue', icon: ListOrdered, color: 'text-emerald-400 hover:text-emerald-300' },
+    { id: 'tier-lab' as TabId, name: 'Tier Lab', icon: TrendingUp, color: 'text-indigo-400 hover:text-indigo-300' },
+    { id: 'research-queue' as TabId, name: 'Research Queue', icon: FlaskConical, color: 'text-emerald-400 hover:text-emerald-300' },
     { id: 'cell-budget' as TabId, name: 'Cell Budget', icon: Clock, color: 'text-amber-400 hover:text-amber-300' },
     { id: 'build-state' as TabId, name: 'Build State', icon: Sliders, color: 'text-rose-400 hover:text-rose-300' },
     { id: 'tournament' as TabId, name: 'Tournament', icon: Trophy, color: 'text-cyan-400 hover:text-cyan-300' },
@@ -170,22 +170,45 @@ export function Layout({ activeTab, setActiveTab, children }: LayoutProps) {
             </div>
 
             {/* Quick Stats Grid */}
-            <div className="grid grid-cols-2 gap-2 mb-6 p-2.5 bg-zinc-950/40 border border-zinc-800/50 rounded-lg">
-              <div>
-                <span className="text-[10px] text-zinc-500 block uppercase tracking-wider font-mono">Coins</span>
-                <span className="text-sm font-semibold text-amber-500">{formatCompact(build.resources.coins)}</span>
+            <div className="grid grid-cols-2 gap-2 mb-6 p-2 bg-zinc-950/40 border border-zinc-800/50 rounded-xl">
+              <div className="p-2 rounded-lg bg-zinc-900/60 border border-zinc-800/40 flex flex-col justify-between">
+                <span className="text-[10px] text-zinc-400 font-semibold flex items-center gap-1.5 uppercase tracking-wider font-mono">
+                  <span className="w-4 h-4 rounded-full bg-amber-950/40 border border-amber-500/30 flex items-center justify-center shrink-0 shadow-xs">
+                    <CurrencyIcon currency="coins" size="xs" />
+                  </span>
+                  Coins
+                </span>
+                <span className="text-sm font-bold text-amber-500 mt-1 font-mono">{formatCompact(build.resources.coins)}</span>
               </div>
-              <div>
-                <span className="text-[10px] text-zinc-500 block uppercase tracking-wider font-mono">Cells</span>
-                <span className="text-sm font-semibold text-purple-400">{formatCompact(build.resources.cells)}</span>
+
+              <div className="p-2 rounded-lg bg-zinc-900/60 border border-zinc-800/40 flex flex-col justify-between">
+                <span className="text-[10px] text-zinc-400 font-semibold flex items-center gap-1.5 uppercase tracking-wider font-mono">
+                  <span className="w-4 h-4 rounded-full bg-purple-950/40 border border-purple-500/30 flex items-center justify-center shrink-0 shadow-xs">
+                    <CurrencyIcon currency="cells" size="xs" />
+                  </span>
+                  Cells
+                </span>
+                <span className="text-sm font-bold text-purple-400 mt-1 font-mono">{formatCompact(build.resources.cells)}</span>
               </div>
-              <div>
-                <span className="text-[10px] text-zinc-500 block uppercase tracking-wider font-mono">Stones</span>
-                <span className="text-sm font-semibold text-teal-400">{build.resources.stones}</span>
+
+              <div className="p-2 rounded-lg bg-zinc-900/60 border border-zinc-800/40 flex flex-col justify-between">
+                <span className="text-[10px] text-zinc-400 font-semibold flex items-center gap-1.5 uppercase tracking-wider font-mono">
+                  <span className="w-4 h-4 rounded-full bg-teal-950/40 border border-teal-500/30 flex items-center justify-center shrink-0 shadow-xs">
+                    <CurrencyIcon currency="stones" size="xs" />
+                  </span>
+                  Stones
+                </span>
+                <span className="text-sm font-bold text-teal-400 mt-1 font-mono">{build.resources.stones}</span>
               </div>
-              <div>
-                <span className="text-[10px] text-zinc-500 block uppercase tracking-wider font-mono">Runs Logged</span>
-                <span className="text-sm font-semibold text-zinc-300">{runs.length}</span>
+
+              <div className="p-2 rounded-lg bg-zinc-900/60 border border-zinc-800/40 flex flex-col justify-between">
+                <span className="text-[10px] text-zinc-400 font-semibold flex items-center gap-1.5 uppercase tracking-wider font-mono">
+                  <span className="w-4 h-4 rounded-full bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-center shrink-0 shadow-xs">
+                    <CurrencyIcon currency="gems" size="xs" />
+                  </span>
+                  Gems
+                </span>
+                <span className="text-sm font-bold text-emerald-400 mt-1 font-mono">{build.resources.gems}</span>
               </div>
             </div>
 
