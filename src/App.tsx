@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Layout, type TabId } from './components/Layout';
 import { ImportRuns } from './components/ImportRuns';
 import { TierLab } from './components/TierLab';
@@ -6,9 +6,37 @@ import { ResearchQueue } from './components/ResearchQueue';
 import { CellBudget } from './components/CellBudget';
 import { BuildState } from './components/BuildState';
 import { TournamentHistory } from './components/TournamentHistory';
+import { syncReferenceData } from './domain/refDataService';
+import { initAuth } from './domain/authService';
+import { initSyncEngine } from './domain/syncEngine';
+import { getAllRunsIDB } from './domain/db/indexedDB';
+import { useStore } from './domain/store';
 
 function App() {
   const [activeTab, setActiveTab] = useState<TabId>('runs');
+
+  useEffect(() => {
+    // 1. Initialize Supabase anonymous session & adoption checks
+    initAuth();
+
+    // 2. Initialize sync engine listeners (window focus, online/offline)
+    initSyncEngine();
+
+    // 3. Background sync of reference data
+    syncReferenceData();
+
+    // 4. Hydrate runs from IndexedDB if store has not loaded them
+    getAllRunsIDB()
+      .then((idbRuns) => {
+        if (idbRuns && idbRuns.length > 0) {
+          const storeRuns = useStore.getState().runs;
+          if (storeRuns.length === 0) {
+            useStore.setState({ runs: idbRuns });
+          }
+        }
+      })
+      .catch(console.warn);
+  }, []);
 
   const renderContent = () => {
     switch (activeTab) {
