@@ -455,38 +455,43 @@ const INITIAL_BUILD: BuildState = {
   verificationFlags: ['golden_tower_bonus', 'wall_health_level', 'wall_unlock_cost'] // from DOMAIN.md §7
 };
 
-export const INITIAL_TASKS: PlannerTask[] = [
-  {
-    id: 'task-garlic-thorns-13',
-    type: 'research',
-    name: 'Garlic Thorns to Lv.13',
-    status: 'active',
-    createdAt: new Date('2026-08-27T12:00:00.000Z').toISOString(),
-    targetResearchId: 'garlic_thorns',
-    targetLevel: 13,
-    notes: 'Required baseline to disable heat-up footgun.'
-  },
-  {
-    id: 'task-stones-1250',
-    type: 'resource',
-    name: 'Save 1,250 Stones for 6th UW',
-    status: 'active',
-    createdAt: new Date('2026-08-27T12:00:00.000Z').toISOString(),
-    targetResource: 'stones',
-    targetAmount: 1250,
-    notes: 'Estimated 75% Spotlight contribution.'
-  },
-  {
-    id: 'task-wall-regen-10',
-    type: 'research',
-    name: 'Wall Regen to Lv.10',
-    status: 'active',
-    createdAt: new Date('2026-08-27T12:00:00.000Z').toISOString(),
-    targetResearchId: 'wall_regen',
-    targetLevel: 10,
-    notes: 'Recommended level to survive high tier runs.'
-  }
-];
+// Seed goals for a fresh store. Built by a factory so createdAt reflects when
+// the planner was first opened, not when this file was written.
+export const createInitialTasks = (): PlannerTask[] => {
+  const createdAt = new Date().toISOString();
+  return [
+    {
+      id: 'task-garlic-thorns-13',
+      type: 'research',
+      name: 'Garlic Thorns to Lv.13',
+      status: 'active',
+      createdAt,
+      targetResearchId: 'garlic_thorns',
+      targetLevel: 13,
+      notes: 'Required baseline to disable heat-up footgun.'
+    },
+    {
+      id: 'task-stones-1250',
+      type: 'resource',
+      name: 'Save 1,250 Stones for 6th UW',
+      status: 'active',
+      createdAt,
+      targetResource: 'stones',
+      targetAmount: 1250,
+      notes: 'Estimated 75% Spotlight contribution.'
+    },
+    {
+      id: 'task-wall-regen-10',
+      type: 'research',
+      name: 'Wall Regen to Lv.10',
+      status: 'active',
+      createdAt,
+      targetResearchId: 'wall_regen',
+      targetLevel: 10,
+      notes: 'Recommended level to survive high tier runs.'
+    }
+  ];
+};
 
 const checkTaskCompletionsHelper = (tasks: PlannerTask[], build: BuildState): PlannerTask[] => {
   return tasks.map((task) => {
@@ -515,7 +520,7 @@ export const useStore = create<StoreState>()(
     (set) => ({
       runs: [],
       build: INITIAL_BUILD,
-      tasks: INITIAL_TASKS,
+      tasks: createInitialTasks(),
       user: null,
       isBannerDismissed: false,
 
