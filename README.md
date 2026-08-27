@@ -15,7 +15,10 @@ A single-player React + TypeScript + Vite dashboard for planning upgrade paths i
 ## Directory Structure
 
 ```text
-├── docs/                # Domain math and build specifications
+├── docs/                # Domain math, build specifications, plans, walkthroughs, and scratchpads
+│   ├── Plan/            # Historical implementation plans and architectural proposals
+│   ├── Walkthrough/     # Feature release walkthroughs and visual verifications
+│   └── Scratchpad/      # Step-by-step verification and diagnostic logs
 ├── src/
 │   ├── components/      # UI Dashboard pages and navigation Frame
 │   │   ├── Layout.tsx
