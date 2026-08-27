@@ -1,0 +1,14 @@
+# Supabase CLI config.
+#
+# `project_id` names the LOCAL Docker stack only. The hosted project is bound
+# separately by `supabase link --project-ref <ref>`, which writes
+# supabase/.temp/project-ref — gitignored, so no project identifier is
+# committed here.
+#
+# Everything else is left at CLI defaults on purpose: the config schema shifts
+# between CLI versions, and a key this file pins wrong is a failure at
+# `supabase start` rather than at review time. Run `npx supabase init` if you
+# want the full annotated config for your installed version — it will merge
+# rather than clobber the migrations beside this file.
+
+project_id = "tower-planner"
