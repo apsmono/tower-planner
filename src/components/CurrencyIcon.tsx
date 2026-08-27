@@ -1,4 +1,4 @@
-export type CurrencyType = 'coins' | 'cash' | 'gems' | 'stones' | 'cells' | 'medals' | 'shards';
+export type CurrencyType = 'coins' | 'cash' | 'gems' | 'stones' | 'cells' | 'medals' | 'shards' | 'keys';
 
 interface CurrencyConfig {
   name: string;
@@ -38,10 +38,10 @@ export const CURRENCY_CONFIG: Record<CurrencyType, CurrencyConfig> = {
   gems: {
     name: 'Gems',
     symbol: '💎',
-    color: '#10b981',
-    textColor: 'text-emerald-400',
-    borderColor: 'border-emerald-500/30',
-    bgColor: 'bg-emerald-950/20',
+    color: '#a855f7',
+    textColor: 'text-purple-400',
+    borderColor: 'border-purple-500/30',
+    bgColor: 'bg-purple-950/20',
     imageSrc: '/assets/currencies/gems.png',
     webpSrc: '/assets/currencies/gems.webp',
     svgSrc: '/assets/currencies/gems.svg',
@@ -49,10 +49,10 @@ export const CURRENCY_CONFIG: Record<CurrencyType, CurrencyConfig> = {
   stones: {
     name: 'Power Stones',
     symbol: '💠',
-    color: '#14b8a6',
-    textColor: 'text-teal-400',
-    borderColor: 'border-teal-500/30',
-    bgColor: 'bg-teal-950/20',
+    color: '#10b981',
+    textColor: 'text-emerald-400',
+    borderColor: 'border-emerald-500/30',
+    bgColor: 'bg-emerald-950/20',
     imageSrc: '/assets/currencies/stones.png',
     webpSrc: '/assets/currencies/stones.webp',
     svgSrc: '/assets/currencies/stones.svg',
@@ -87,6 +87,17 @@ export const CURRENCY_CONFIG: Record<CurrencyType, CurrencyConfig> = {
     bgColor: 'bg-purple-950/20',
     imageSrc: '/assets/currencies/shards.png',
     webpSrc: '/assets/currencies/shards.webp',
+  },
+  keys: {
+    name: 'Tourney Keys',
+    symbol: '🔑',
+    color: '#ef4444',
+    textColor: 'text-rose-400',
+    borderColor: 'border-rose-500/30',
+    bgColor: 'bg-rose-950/20',
+    imageSrc: '/assets/currencies/keys.svg',
+    webpSrc: '/assets/currencies/keys.svg',
+    svgSrc: '/assets/currencies/keys.svg',
   },
 };
 

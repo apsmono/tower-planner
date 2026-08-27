@@ -2,8 +2,7 @@ import { useStore } from '../domain/store';
 import { CurrencyIcon } from './CurrencyIcon';
 import { 
   Trophy, 
-  TrendingUp, 
-  Key
+  TrendingUp
 } from 'lucide-react';
 import { 
   LineChart, 
@@ -60,7 +59,7 @@ export function TournamentHistory() {
 
       {/* Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="p-5 glass-panel rounded-xl flex items-center space-x-4 glow-emerald">
+        <div className="p-5 glass-panel rounded-xl flex items-center space-x-4 glow-purple">
           <CurrencyIcon currency="gems" size="xl" />
           <div>
             <span className="text-[10px] text-zinc-500 font-mono uppercase block">Total Tourney Gems</span>
@@ -68,7 +67,7 @@ export function TournamentHistory() {
           </div>
         </div>
 
-        <div className="p-5 glass-panel rounded-xl flex items-center space-x-4 glow-teal">
+        <div className="p-5 glass-panel rounded-xl flex items-center space-x-4 glow-emerald">
           <CurrencyIcon currency="stones" size="xl" />
           <div>
             <span className="text-[10px] text-zinc-500 font-mono uppercase block">Total Tourney Stones</span>
@@ -76,8 +75,8 @@ export function TournamentHistory() {
           </div>
         </div>
 
-        <div className="p-5 glass-panel rounded-xl flex items-center space-x-4 glow-purple">
-          <Key className="text-purple-400 w-8 h-8 shrink-0" />
+        <div className="p-5 glass-panel rounded-xl flex items-center space-x-4 glow-rose">
+          <CurrencyIcon currency="keys" size="xl" />
           <div>
             <span className="text-[10px] text-zinc-500 font-mono uppercase block">Total Tourney Keys</span>
             <span className="text-lg font-bold text-white font-mono">{formatCompact(totals.keys)}</span>
@@ -144,18 +143,23 @@ export function TournamentHistory() {
                   <th className="p-3">Tier</th>
                   <th className="p-3">Wave Reached</th>
                   <th className="p-3">
-                    <span className="inline-flex items-center gap-1 text-emerald-400">
+                    <span className="inline-flex items-center gap-1 text-purple-400">
                       <CurrencyIcon currency="gems" size="xs" />
                       <span>Gems</span>
                     </span>
                   </th>
                   <th className="p-3">
-                    <span className="inline-flex items-center gap-1 text-teal-400">
+                    <span className="inline-flex items-center gap-1 text-emerald-400">
                       <CurrencyIcon currency="stones" size="xs" />
                       <span>Stones</span>
                     </span>
                   </th>
-                  <th className="p-3 text-indigo-400">Keys</th>
+                  <th className="p-3">
+                    <span className="inline-flex items-center gap-1 text-rose-400">
+                      <CurrencyIcon currency="keys" size="xs" />
+                      <span>Keys</span>
+                    </span>
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-800/60 bg-zinc-950/20">
@@ -180,20 +184,25 @@ export function TournamentHistory() {
                       <td className="p-3 font-semibold font-mono text-white">
                         {run.wave.toLocaleString()}
                       </td>
-                      <td className="p-3 text-emerald-400 font-mono font-semibold">
+                      <td className="p-3 text-purple-400 font-mono font-semibold">
                         <span className="inline-flex items-center gap-1">
                           <CurrencyIcon currency="gems" size="xs" />
                           <span>{rewards.gems.toLocaleString()}</span>
                         </span>
                       </td>
-                      <td className="p-3 text-teal-400 font-mono font-semibold">
+                      <td className="p-3 text-emerald-400 font-mono font-semibold">
                         <span className="inline-flex items-center gap-1">
                           <CurrencyIcon currency="stones" size="xs" />
                           <span>{rewards.stones.toLocaleString()}</span>
                         </span>
                       </td>
-                      <td className="p-3 text-indigo-400 font-mono font-semibold">
-                        {rewards.keys > 0 ? rewards.keys.toLocaleString() : '-'}
+                      <td className="p-3 text-rose-400 font-mono font-semibold">
+                        {rewards.keys > 0 ? (
+                          <span className="inline-flex items-center gap-1">
+                            <CurrencyIcon currency="keys" size="xs" />
+                            <span>{rewards.keys.toLocaleString()}</span>
+                          </span>
+                        ) : '-'}
                       </td>
                     </tr>
                   );
