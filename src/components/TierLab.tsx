@@ -3,7 +3,7 @@ import { getModelCells } from '../domain/cellModel';
 import { 
   TrendingUp, 
   HelpCircle, 
-  AlertTriangle, 
+ 
   CheckCircle,
   XCircle,
   Layers

@@ -10,6 +10,7 @@ A single-player React + TypeScript + Vite dashboard for planning upgrade paths i
 4. **Cell Budget**: Visualizes daily cell burn ratios, projects cells per run, and displays hard-blocks for unaffordable 3x+ speed boosts.
 5. **Build State**: Form panels to customize resource balances, modules, active lab slots, and verify-in-game checklists.
 6. **Tournament History**: Projections of tournament waves over brackets and total tournament economic yields.
+7. **Cloud Data Sync & Auth**: Interactive banner and modal suggesting login/registration to backup and review runs, lab queues, and build states across desktop and mobile devices.
 
 ## Directory Structure
 
@@ -18,11 +19,14 @@ A single-player React + TypeScript + Vite dashboard for planning upgrade paths i
 ├── src/
 │   ├── components/      # UI Dashboard pages and navigation Frame
 │   │   ├── Layout.tsx
+│   │   ├── AuthSyncBanner.tsx
+│   │   ├── AuthModal.tsx
 │   │   ├── ImportRuns.tsx
 │   │   ├── TierLab.tsx
 │   │   ├── UpgradeQueue.tsx
 │   │   ├── CellBudget.tsx
 │   │   ├── BuildState.tsx
+│   │   ├── TaskHUD.tsx
 │   │   └── TournamentHistory.tsx
 │   ├── domain/          # Parser engine, cell math, and Zustand state store
 │   │   ├── parser.ts
