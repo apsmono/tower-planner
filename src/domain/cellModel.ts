@@ -69,3 +69,16 @@ export const IDEAL_FARMING_WAVES: Record<number, number> = {
   12: 2510,
   13: 2259
 };
+
+export const BOOST_COSTS: Record<number, number> = {
+  1.0: 0,
+  1.5: 360,
+  2.0: 2400,
+  3.0: 20160,
+  4.0: 80640,
+  5.0: 285600,
+  6.0: 1440000,
+  7.0: 6000000,
+  8.0: 24000000
+};
+

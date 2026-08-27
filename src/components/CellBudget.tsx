@@ -1,26 +1,14 @@
 import { useState } from 'react';
-import { useStore, type LabSlot } from '../domain/store';
-import { getModelCells } from '../domain/cellModel';
+import { useStore } from '../domain/store';
+import { getModelCells, BOOST_COSTS } from '../domain/cellModel';
 import { 
-  Percent, 
   Clock, 
   AlertTriangle, 
-  HelpCircle, 
-  Play, 
   Gauge, 
   Activity,
   Calculator
 } from 'lucide-react';
 
-const BOOST_COSTS: Record<number, number> = {
-  1.0: 0,
-  1.5: 360,
-  2.0: 2400,
-  3.0: 20160,
-  4.0: 80640,
-  5.0: 285600,
-  6.0: 1440000
-};
 
 export function CellBudget() {
   const runs = useStore((state) => state.runs);
@@ -82,14 +70,7 @@ export function CellBudget() {
     }
   }
 
-  // Backup fallback: Play time totals
-  let totalPlayTimeSec = 0;
-  let totalCellsLogged = 0;
-  runs.filter((r) => !r.excluded).forEach((r) => {
-    totalPlayTimeSec += r.realTimeSec;
-    totalCellsLogged += r.fields.cellsEarned || 0;
-  });
-  const avgCellsPerPlayHour = totalPlayTimeSec > 0 ? totalCellsLogged / (totalPlayTimeSec / 3600) : 0;
+
 
   // Theoretical ceiling (based on active farm runs average cells/hr, assuming 24h uptime)
   const farmRuns = runs.filter((r) => r.runType === 'farm' && !r.excluded);
@@ -154,6 +135,21 @@ export function CellBudget() {
                 ? 'Critically unsustainable! Daily burn exceeds cell income.' 
                 : 'Sustainable queue. Lab boost is funded.'}
             </p>
+            <div className="mt-3 pt-3 border-t border-zinc-800 space-y-1 text-[11px] font-mono text-zinc-400">
+              <div className="flex justify-between">
+                <span>Net Hourly Flow:</span>
+                <span className={effectiveIncome - dailyBurn >= 0 ? 'text-emerald-400 font-semibold' : 'text-rose-400 font-semibold'}>
+                  {effectiveIncome - dailyBurn >= 0 ? '+' : ''}
+                  {formatCompact((effectiveIncome - dailyBurn) / 24)} cells/hr
+                </span>
+              </div>
+              <div className="flex justify-between text-[10px] text-zinc-500">
+                <span>Gain vs Burn:</span>
+                <span>
+                  {formatCompact(effectiveIncome / 24)} vs {formatCompact(dailyBurn / 24)}/hr
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -163,9 +159,14 @@ export function CellBudget() {
             <Activity className="w-5 h-5 text-emerald-400" />
           </div>
           <div className="mt-4">
-            <span className="text-3xl font-extrabold text-white font-mono">
-              {formatCompact(effectiveIncome)}
-            </span>
+            <div className="flex items-baseline space-x-2">
+              <span className="text-3xl font-extrabold text-white font-mono">
+                {formatCompact(effectiveIncome)}
+              </span>
+              <span className="text-sm font-semibold text-zinc-400 font-mono">
+                ({formatCompact(effectiveIncome / 24)}/hr)
+              </span>
+            </div>
             <span className="text-[10px] text-zinc-500 block mt-1 font-mono uppercase">
               {realizedIncomeAvailable ? 'Realized daily rate' : 'Estimated Ceiling'}
             </span>
@@ -183,9 +184,14 @@ export function CellBudget() {
             <Clock className="w-5 h-5 text-amber-500" />
           </div>
           <div className="mt-4">
-            <span className="text-3xl font-extrabold text-white font-mono">
-              {formatCompact(dailyBurn)}
-            </span>
+            <div className="flex items-baseline space-x-2">
+              <span className="text-3xl font-extrabold text-white font-mono">
+                {formatCompact(dailyBurn)}
+              </span>
+              <span className="text-sm font-semibold text-zinc-400 font-mono">
+                ({formatCompact(dailyBurn / 24)}/hr)
+              </span>
+            </div>
             <span className="text-[10px] text-zinc-500 block mt-1 font-mono uppercase">
               Active speed boost cost
             </span>
@@ -227,19 +233,21 @@ export function CellBudget() {
                 <span className="text-xs font-semibold text-zinc-200 font-mono">Lab {index + 1} Boost</span>
                 
                 <div className="flex items-center space-x-4">
-                  <span className="text-[11px] text-zinc-500 font-mono">{BOOST_COSTS[lab.boost]} cells/day</span>
+                  <span className="text-[11px] text-zinc-500 font-mono">{(BOOST_COSTS[lab.boost] || 0).toLocaleString()} cells/day</span>
                   <select
                     value={lab.boost}
                     onChange={(e) => handleBoostSelect(index, e.target.value)}
                     className="bg-zinc-900 border border-zinc-800 rounded px-2 py-1 text-xs text-zinc-100 focus:outline-none focus:border-indigo-500"
                   >
-                    <option value="1.0">1.0x (Free)</option>
+                    <option value="1">1.0x (Free)</option>
                     <option value="1.5">1.5x (360/d)</option>
-                    <option value="2.0">2.0x (2,400/d)</option>
-                    <option value="3.0">3.0x (20,160/d)</option>
-                    <option value="4.0">4.0x (80,640/d)</option>
-                    <option value="5.0">5.0x (285,600/d)</option>
-                    <option value="6.0">6.0x (1.44M/d)</option>
+                    <option value="2">2.0x (2.4K/d)</option>
+                    <option value="3">3.0x (20.1K/d)</option>
+                    <option value="4">4.0x (80.6K/d)</option>
+                    <option value="5">5.0x (285K/d)</option>
+                    <option value="6">6.0x (1.44M/d)</option>
+                    <option value="7">7.0x (6.00M/d)</option>
+                    <option value="8">8.0x (24.0M/d)</option>
                   </select>
                 </div>
               </div>
