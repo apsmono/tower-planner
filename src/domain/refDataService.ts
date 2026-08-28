@@ -7,6 +7,7 @@ export interface RefDataCache {
   dataVersion: number;
   lastCheckedAt: string;
   labs?: Database['public']['Tables']['ref_labs']['Row'][];
+  labLevels?: Database['public']['Tables']['ref_lab_levels']['Row'][];
   uwConfigs?: Database['public']['Tables']['ref_uw_configs']['Row'][];
   uwStats?: Database['public']['Tables']['ref_uw_stats']['Row'][];
   tournamentLeagues?: Database['public']['Tables']['ref_tournament_leagues']['Row'][];
@@ -75,9 +76,10 @@ export async function syncReferenceData(): Promise<void> {
       return; // Cache is already up to date
     }
 
-    // Pull all 11 reference tables
+    // Pull all reference tables
     const [
       labsRes,
+      labLevelsRes,
       uwConfigsRes,
       uwStatsRes,
       tournamentLeaguesRes,
@@ -89,6 +91,7 @@ export async function syncReferenceData(): Promise<void> {
       moduleTiersRes
     ] = await Promise.all([
       supabase.from('ref_labs').select('*'),
+      supabase.from('ref_lab_levels').select('*'),
       supabase.from('ref_uw_configs').select('*'),
       supabase.from('ref_uw_stats').select('*'),
       supabase.from('ref_tournament_leagues').select('*').order('sort_order', { ascending: true }),
@@ -104,6 +107,7 @@ export async function syncReferenceData(): Promise<void> {
       dataVersion: currentVersion,
       lastCheckedAt: new Date().toISOString(),
       labs: labsRes.data || existingCache?.labs,
+      labLevels: labLevelsRes.data || existingCache?.labLevels,
       uwConfigs: uwConfigsRes.data || existingCache?.uwConfigs,
       uwStats: uwStatsRes.data || existingCache?.uwStats,
       tournamentLeagues: tournamentLeaguesRes.data || existingCache?.tournamentLeagues,
@@ -137,3 +141,17 @@ export function getCachedTournamentRewards(bracket: string, rank: number) {
   }
   return null;
 }
+
+export function getCachedLabLevel(labId: string, level: number) {
+  const cache = loadRefDataCache();
+  if (!cache?.labLevels) return null;
+  const match = cache.labLevels.find((l) => l.lab_id === labId && l.level === level);
+  if (match) {
+    return {
+      baseTimeSeconds: match.base_time_seconds,
+      coinCost: match.coin_cost ?? 0
+    };
+  }
+  return null;
+}
+

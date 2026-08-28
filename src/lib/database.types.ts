@@ -424,6 +424,38 @@ export type Database = {
           },
         ]
       }
+      ref_lab_levels: {
+        Row: {
+          base_time_seconds: number
+          coin_cost: number | null
+          created_at: string
+          lab_id: string
+          level: number
+        }
+        Insert: {
+          base_time_seconds: number
+          coin_cost?: number | null
+          created_at?: string
+          lab_id: string
+          level: number
+        }
+        Update: {
+          base_time_seconds?: number
+          coin_cost?: number | null
+          created_at?: string
+          lab_id?: string
+          level?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ref_lab_levels_lab_id_fkey"
+            columns: ["lab_id"]
+            isOneToOne: false
+            referencedRelation: "ref_labs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ref_module_tiers: {
         Row: {
           id: string

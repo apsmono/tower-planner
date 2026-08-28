@@ -1,4 +1,13 @@
 import { MASTER_LAB_CATALOG, type LabDefinition, type LabCategory } from '../data/labCatalog';
+import { 
+  getBaseLabTime, 
+  getLabCoinCost, 
+  calculateEffectiveLabTime, 
+  formatLabDuration,
+  calculateLabResearchSummary,
+  type LabResearchCalculationParams 
+} from '../data/labLevelData';
+import { getCachedLabLevel } from './refDataService';
 import type { ResearchEntry } from './store';
 
 export interface LabQueryOptions {
@@ -69,6 +78,53 @@ export class LabDatabase {
       }
       return true;
     });
+  }
+
+  /**
+   * Get base research time in seconds for a lab at a given level (checks cached DB row first, falls back to code formulas).
+   */
+  public static getLabBaseTime(labId: string, level: number): number {
+    const cached = getCachedLabLevel(labId, level);
+    if (cached && cached.baseTimeSeconds > 0) {
+      return cached.baseTimeSeconds;
+    }
+    return getBaseLabTime(labId, level);
+  }
+
+  /**
+   * Get base coin cost for a lab at a given level.
+   */
+  public static getLabCost(labId: string, level: number): number {
+    const cached = getCachedLabLevel(labId, level);
+    if (cached && cached.coinCost > 0) {
+      return cached.coinCost;
+    }
+    return getLabCoinCost(labId, level);
+  }
+
+  /**
+   * Calculate effective duration in seconds factoring user lab speed and cell boosts.
+   */
+  public static getEffectiveTime(
+    baseTimeSeconds: number,
+    labSpeedMultiplier: number = 1.0,
+    cellBoost: number = 1.0
+  ): number {
+    return calculateEffectiveLabTime(baseTimeSeconds, labSpeedMultiplier, cellBoost);
+  }
+
+  /**
+   * Formats duration in seconds into human-readable compact string.
+   */
+  public static formatDuration(seconds: number): string {
+    return formatLabDuration(seconds);
+  }
+
+  /**
+   * Calculate complete research summary for any lab and level range factoring speed, relic, and coin discount.
+   */
+  public static calculateResearch(params: LabResearchCalculationParams) {
+    return calculateLabResearchSummary(params);
   }
 
   /**

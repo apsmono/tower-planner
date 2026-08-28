@@ -10,6 +10,7 @@
  * a patch corrects rows in place rather than failing on the primary key.
  */
 import { MASTER_LAB_CATALOG } from '../src/data/labCatalog';
+import { generateAllMasterLabLevels } from '../src/data/labLevelData';
 import { UW_CONFIGS } from '../src/domain/store';
 import { cum1, IDEAL_FARMING_WAVES, BOOST_COSTS } from '../src/domain/cellModel';
 import { getTournamentRewards } from '../src/domain/tournamentModel';
@@ -91,6 +92,18 @@ MASTER_LAB_CATALOG.forEach((lab, i) => {
         String(i),
       ].join(', ') +
       `) on conflict (id) do update set name = excluded.name, category = excluded.category, max_level = excluded.max_level, description = excluded.description, wiki_url = excluded.wiki_url, default_channel = excluded.default_channel, default_effect_kind = excluded.default_effect_kind, default_reason = excluded.default_reason, sort_order = excluded.sort_order;`,
+  );
+});
+say();
+
+// --- lab levels --------------------------------------------------------------
+const allLabLevels = generateAllMasterLabLevels();
+say(`-- ref_lab_levels (${allLabLevels.length} rows) ------------------------------------------`);
+allLabLevels.forEach((item) => {
+  say(
+    `insert into public.ref_lab_levels (lab_id, level, base_time_seconds, coin_cost) values (` +
+      [lit(item.labId), num(item.level), num(item.baseTimeSeconds), num(item.coinCost)].join(', ') +
+      `) on conflict (lab_id, level) do update set base_time_seconds = excluded.base_time_seconds, coin_cost = excluded.coin_cost;`,
   );
 });
 say();

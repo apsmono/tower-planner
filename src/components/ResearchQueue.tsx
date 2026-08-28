@@ -1,21 +1,23 @@
 import { useState, useMemo } from 'react';
-import { useStore, type Run, type ResearchEntry } from '../domain/store';
+import { useStore, type Run } from '../domain/store';
 import { BOOST_COSTS } from '../domain/cellModel';
-import { LAB_CATEGORIES, type LabCategory } from '../data/labCatalog';
+import { MASTER_LAB_CATALOG, LAB_CATEGORIES, type LabCategory } from '../data/labCatalog';
 import { LabDatabase } from '../domain/labDatabase';
 import { CurrencyIcon } from './CurrencyIcon';
+import { LabCalculatorModal } from './LabCalculatorModal';
+import { LabCard } from './LabCard';
 import { 
   FlaskConical, 
   AlertTriangle, 
   Check, 
-  Pin,
-  Search,
-  BookOpen,
-  ExternalLink,
-  Database,
-  ChevronDown,
-  ChevronUp,
-  Sparkles
+  Pin, 
+  Search, 
+  BookOpen, 
+  Database, 
+  ChevronDown, 
+  ChevronUp, 
+  Sparkles,
+  Calculator
 } from 'lucide-react';
 
 import { getField } from '../domain/parser';
@@ -41,8 +43,6 @@ export function ResearchQueue() {
   const runs = useStore((state) => state.runs);
   const build = useStore((state) => state.build);
   const updateResearchCatalog = useStore((state) => state.updateResearchCatalog);
-  const addResearchCatalogItem = useStore((state) => state.addResearchCatalogItem);
-  const removeResearchCatalogItem = useStore((state) => state.removeResearchCatalogItem);
   const tasks = useStore((state) => state.tasks);
   const addTask = useStore((state) => state.addTask);
   const deleteTask = useStore((state) => state.deleteTask);
@@ -56,6 +56,9 @@ export function ResearchQueue() {
   const [showWikiCatalog, setShowWikiCatalog] = useState<boolean>(false);
   const [wikiSearchQuery, setWikiSearchQuery] = useState<string>('');
   const [wikiCategory, setWikiCategory] = useState<LabCategory>('all');
+  const [labOwnershipFilter, setLabOwnershipFilter] = useState<'all' | 'researched' | 'unresearched'>('all');
+  const [showCalculator, setShowCalculator] = useState<boolean>(false);
+  const [calculatorLabId, setCalculatorLabId] = useState<string>('wall_thorns');
 
   // Custom Unified conversion rate (coins per cell)
   const farmRuns = runs.filter((r) => r.runType === 'farm' && !r.excluded);
@@ -208,13 +211,34 @@ export function ResearchQueue() {
     });
   }, [filteredResearches, exchangeRateOverride]);
 
-  // Wiki catalog filtering
+  // Researched labs count
+  const researchedLabsCount = useMemo(() => {
+    return MASTER_LAB_CATALOG.filter((lab) => {
+      const entry = build.researchCatalog.find((r) => r.id === lab.id);
+      return entry && entry.level > 0;
+    }).length;
+  }, [build.researchCatalog]);
+
+  // Master all labs filtering
   const masterWikiLabs = useMemo(() => {
-    return LabDatabase.queryMasterLabs({
-      category: wikiCategory,
-      searchQuery: wikiSearchQuery
+    return MASTER_LAB_CATALOG.filter((lab) => {
+      // Category filter
+      if (wikiCategory !== 'all' && lab.category !== wikiCategory) return false;
+
+      // Ownership filter
+      const entry = build.researchCatalog.find((r) => r.id === lab.id);
+      const userLevel = entry ? entry.level : 0;
+      if (labOwnershipFilter === 'researched' && userLevel <= 0) return false;
+      if (labOwnershipFilter === 'unresearched' && userLevel > 0) return false;
+
+      // Search query
+      if (wikiSearchQuery) {
+        const q = wikiSearchQuery.toLowerCase();
+        return lab.name.toLowerCase().includes(q) || lab.description.toLowerCase().includes(q);
+      }
+      return true;
     });
-  }, [wikiCategory, wikiSearchQuery]);
+  }, [wikiCategory, labOwnershipFilter, wikiSearchQuery, build.researchCatalog]);
 
   // Dead Levers Callout Finder
   const deadLevers: { name: string; share: number }[] = [];
@@ -237,30 +261,6 @@ export function ResearchQueue() {
     });
   }
 
-  const handleAddMasterLabToCatalog = (lab: typeof masterWikiLabs[0]) => {
-    const existing = build.researchCatalog.find((r) => r.id === lab.id);
-    if (existing) return;
-
-    const newEntry: ResearchEntry = {
-      id: lab.id,
-      name: lab.name,
-      level: 1,
-      change: 'Lv.1 → Lv.2',
-      coinCost: 1000000,
-      baseTimeSeconds: 86400,
-      targetLevel: Math.min(2, lab.maxLevel),
-      effect: {
-        channel: lab.defaultChannel || 'coins.global',
-        from: 1.0,
-        to: 1.05,
-        kind: lab.defaultEffectKind || 'percent'
-      },
-      reason: lab.defaultReason
-    };
-
-    addResearchCatalogItem(newEntry);
-  };
-
   return (
     <div className="space-y-8">
       {/* Page Header */}
@@ -275,38 +275,66 @@ export function ResearchQueue() {
           </p>
         </div>
 
-        {/* Wiki Catalog Button */}
-        <button
-          type="button"
-          onClick={() => setShowWikiCatalog(!showWikiCatalog)}
-          className="flex items-center space-x-2 px-3.5 py-2 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-indigo-500/60 text-zinc-200 text-xs font-mono font-semibold transition-all shadow-sm hover:shadow-indigo-500/10 cursor-pointer self-start md:self-auto"
-        >
-          <Database className="w-4 h-4 text-indigo-400" />
-          <span>{showWikiCatalog ? 'Hide Wiki Master Catalog' : 'Explore Full Wiki Lab Database (45+)'}</span>
-          {showWikiCatalog ? <ChevronUp className="w-3.5 h-3.5 text-zinc-500" /> : <ChevronDown className="w-3.5 h-3.5 text-zinc-500" />}
-        </button>
+        <div className="flex flex-wrap items-center gap-2 self-start md:self-auto">
+          {/* Lab Calculator Button */}
+          <button
+            type="button"
+            onClick={() => {
+              setCalculatorLabId('wall_thorns');
+              setShowCalculator(true);
+            }}
+            className="flex items-center space-x-2 px-3.5 py-2 rounded-lg bg-indigo-600/20 border border-indigo-500/50 hover:bg-indigo-600/30 text-indigo-300 text-xs font-mono font-semibold transition-all shadow-sm hover:shadow-indigo-500/20 cursor-pointer"
+          >
+            <Calculator className="w-4 h-4 text-indigo-400" />
+            <span>Lab & Discount Calculator</span>
+          </button>
+
+          {/* All Labs Button */}
+          <button
+            type="button"
+            onClick={() => setShowWikiCatalog(!showWikiCatalog)}
+            className={`flex items-center space-x-2 px-3.5 py-2 rounded-lg border text-xs font-mono font-semibold transition-all shadow-sm cursor-pointer ${
+              showWikiCatalog
+                ? 'bg-indigo-600 text-white border-indigo-500 shadow-indigo-500/25'
+                : 'bg-zinc-900 border-zinc-800 hover:border-indigo-500/60 text-zinc-200 hover:shadow-indigo-500/10'
+            }`}
+          >
+            <Database className="w-4 h-4 text-indigo-400" />
+            <span>{showWikiCatalog ? 'Hide All Labs' : `All Labs (${MASTER_LAB_CATALOG.length})`}</span>
+            {showWikiCatalog ? <ChevronUp className="w-3.5 h-3.5 text-zinc-300" /> : <ChevronDown className="w-3.5 h-3.5 text-zinc-500" />}
+          </button>
+        </div>
       </div>
 
-      {/* Wiki Master Catalog Section */}
+      {/* All Labs & Player Research Levels Section */}
       {showWikiCatalog && (
         <div className="p-5 glass-panel rounded-xl border border-indigo-500/40 bg-zinc-950/60 space-y-4 animate-fadeIn glow-indigo">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-zinc-800/80 pb-3">
+          {/* Section Top Header & Filters */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-800/80 pb-4">
             <div>
-              <h3 className="text-sm font-semibold text-white font-mono uppercase tracking-wider flex items-center space-x-2">
-                <BookOpen className="w-4 h-4 text-indigo-400" />
-                <span>The Tower — Full Master Lab Encyclopedia</span>
-              </h3>
-              <p className="text-xs text-zinc-400 mt-0.5">
-                Every research from the official wiki. Add any lab to your active planner or view wiki guides.
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-sm font-semibold text-white font-mono uppercase tracking-wider flex items-center space-x-2">
+                  <BookOpen className="w-4 h-4 text-indigo-400" />
+                  <span>All Labs & Current Research Levels</span>
+                </h3>
+                <span className="px-2 py-0.5 rounded-full bg-indigo-950/80 border border-indigo-800/60 text-indigo-300 text-[11px] font-mono font-medium">
+                  {researchedLabsCount} / {MASTER_LAB_CATALOG.length} Researched
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400 text-[11px] font-mono font-medium">
+                  {MASTER_LAB_CATALOG.length - researchedLabsCount} Not Started
+                </span>
+              </div>
+              <p className="text-xs text-zinc-400 mt-1">
+                View and freely adjust your actual in-game lab levels (from Lv. 0 up to max level). Click any card controls to set your level or plan next upgrades.
               </p>
             </div>
 
-            {/* Wiki Search Input */}
+            {/* Search Input */}
             <div className="relative w-full md:w-64">
               <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-2.5 top-2.5" />
               <input
                 type="text"
-                placeholder="Search master labs..."
+                placeholder="Search all 100+ labs..."
                 value={wikiSearchQuery}
                 onChange={(e) => setWikiSearchQuery(e.target.value)}
                 className="w-full bg-zinc-900/90 border border-zinc-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-indigo-500 font-mono"
@@ -314,88 +342,81 @@ export function ResearchQueue() {
             </div>
           </div>
 
-          {/* Wiki Category Pills */}
-          <div className="flex flex-wrap gap-1.5">
-            {LAB_CATEGORIES.map((cat) => {
-              const isSelected = wikiCategory === cat.id;
-              return (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => setWikiCategory(cat.id)}
-                  className={`px-2.5 py-1 rounded-md text-[11px] font-mono transition-all flex items-center space-x-1.5 cursor-pointer ${
-                    isSelected
-                      ? 'bg-indigo-600 text-white font-semibold shadow-xs shadow-indigo-500/40'
-                      : 'bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
-                  }`}
-                >
-                  <span>{cat.icon}</span>
-                  <span>{cat.label}</span>
-                </button>
-              );
-            })}
+          {/* Filter Bar: Ownership & Categories */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+            {/* Ownership Filter Pills */}
+            <div className="flex items-center bg-zinc-900/80 p-1 rounded-lg border border-zinc-800 text-xs font-mono">
+              <button
+                type="button"
+                onClick={() => setLabOwnershipFilter('all')}
+                className={`px-3 py-1 rounded transition-all cursor-pointer ${
+                  labOwnershipFilter === 'all'
+                    ? 'bg-indigo-600 text-white font-semibold shadow-xs shadow-indigo-500/40'
+                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
+                }`}
+              >
+                All ({MASTER_LAB_CATALOG.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setLabOwnershipFilter('researched')}
+                className={`px-3 py-1 rounded transition-all cursor-pointer ${
+                  labOwnershipFilter === 'researched'
+                    ? 'bg-indigo-600 text-white font-semibold shadow-xs shadow-indigo-500/40'
+                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
+                }`}
+              >
+                Researched ({researchedLabsCount})
+              </button>
+              <button
+                type="button"
+                onClick={() => setLabOwnershipFilter('unresearched')}
+                className={`px-3 py-1 rounded transition-all cursor-pointer ${
+                  labOwnershipFilter === 'unresearched'
+                    ? 'bg-indigo-600 text-white font-semibold shadow-xs shadow-indigo-500/40'
+                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
+                }`}
+              >
+                Not Started ({MASTER_LAB_CATALOG.length - researchedLabsCount})
+              </button>
+            </div>
+
+            {/* Category Filter Pills */}
+            <div className="flex flex-wrap gap-1.5">
+              {LAB_CATEGORIES.map((cat) => {
+                const isSelected = wikiCategory === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setWikiCategory(cat.id)}
+                    className={`px-2.5 py-1 rounded-md text-[11px] font-mono transition-all flex items-center space-x-1.5 cursor-pointer ${
+                      isSelected
+                        ? 'bg-indigo-600 text-white font-semibold shadow-xs shadow-indigo-500/40'
+                        : 'bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
+                    }`}
+                  >
+                    <span>{cat.icon}</span>
+                    <span>{cat.label}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-          {/* Master Labs Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-[300px] overflow-y-auto pr-1">
-            {masterWikiLabs.map((lab) => {
-              const isAlreadyInPlanner = build.researchCatalog.some((r) => r.id === lab.id);
-              return (
-                <div
-                  key={lab.id}
-                  className="p-3 bg-zinc-900/60 border border-zinc-800/80 rounded-lg flex flex-col justify-between space-y-2 hover:border-zinc-700 transition-colors"
-                >
-                  <div>
-                    <div className="flex items-start justify-between gap-2">
-                      <span className="font-semibold text-xs text-slate-800 dark:text-zinc-100">{lab.name}</span>
-                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-zinc-400 shrink-0">
-                        Max Lv.{lab.maxLevel}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-500 dark:text-zinc-400 leading-tight mt-1">
-                      {lab.description}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-1 border-t border-slate-200 dark:border-zinc-800/50">
-                    <a
-                      href={lab.wikiUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[10px] font-mono text-indigo-500 dark:text-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-300 flex items-center space-x-1"
-                    >
-                      <span>Wiki</span>
-                      <ExternalLink className="w-2.5 h-2.5" />
-                    </a>
-
-                    {isAlreadyInPlanner ? (
-                      <div className="flex items-center space-x-2">
-                        <span className="text-[10px] font-mono text-emerald-400 font-semibold flex items-center space-x-1">
-                          <Check className="w-3 h-3" />
-                          <span>In Planner</span>
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => removeResearchCatalogItem(lab.id)}
-                          className="text-[9px] font-mono text-zinc-500 hover:text-rose-400 hover:underline cursor-pointer"
-                          title="Remove from planner"
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => handleAddMasterLabToCatalog(lab)}
-                        className="text-[10px] font-mono px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white rounded font-semibold transition-colors cursor-pointer shadow-xs"
-                      >
-                        Add to planner
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+          {/* All Labs Grid with Interactive Level Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 max-h-[520px] overflow-y-auto pr-1">
+            {masterWikiLabs.map((lab) => (
+              <LabCard
+                key={lab.id}
+                lab={lab}
+                onOpenCalculator={(id) => {
+                  setCalculatorLabId(id);
+                  setShowCalculator(true);
+                }}
+                cellBoost={labBoostSelect}
+              />
+            ))}
           </div>
         </div>
       )}
@@ -829,6 +850,13 @@ export function ResearchQueue() {
           ))}
         </div>
       </div>
+
+      {/* Lab Level & Time Calculator Modal */}
+      <LabCalculatorModal
+        isOpen={showCalculator}
+        onClose={() => setShowCalculator(false)}
+        initialLabId={calculatorLabId}
+      />
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { type ParsedRun, parseDuration } from './parser';
 import { putRunIDB, putRunsIDB, deleteRunIDB, enqueueOutboxIDB } from './db/indexedDB';
+import { getBaseLabTime, getLabCoinCost } from '../data/labLevelData';
 
 export interface Run extends ParsedRun {
   id: string;
@@ -254,6 +255,14 @@ export interface BuildState {
   };
   labs: LabSlot[]; // length 5
   labSpeedMultiplier: number;
+  labSpeedLevel?: number;
+  labSpeedRelicMult?: number;
+  labCoinDiscountLevel?: number;
+  workshopDiscount?: {
+    attack: number;
+    defense: number;
+    utility: number;
+  };
   researchCatalog: ResearchEntry[];
   ultimateWeapons: UW[];
   modules: Module[];
@@ -312,6 +321,8 @@ interface StoreState {
   updateResources: (resources: Partial<BuildState['resources']>) => void;
   updateLabSlot: (index: number, updates: Partial<LabSlot>) => void;
   updateLabSpeedMultiplier: (val: number) => void;
+  setLabSpeedSettings: (labSpeedLevel: number, relicMult?: number) => void;
+  setDiscountSettings: (labCoinDiscountLevel: number, workshopDiscount?: { attack: number; defense: number; utility: number }) => void;
   updateResearchCatalog: (id: string, updates: Partial<ResearchEntry>) => void;
   addResearchCatalogItem: (item: ResearchEntry) => void;
   removeResearchCatalogItem: (id: string) => void;
@@ -446,7 +457,15 @@ const INITIAL_BUILD: BuildState = {
     { researchId: 'dw_cell', level: 9, boost: 2.0, startedAt: new Date().toISOString() },
     { researchId: 'wall_thorns', level: 7, boost: 2.0, startedAt: new Date().toISOString() }
   ],
-  labSpeedMultiplier: 3.12, // example default
+  labSpeedMultiplier: 2.8356, // default for Lv 89 lab speed + 1.02 relic mult
+  labSpeedLevel: 89,
+  labSpeedRelicMult: 1.02,
+  labCoinDiscountLevel: 30,
+  workshopDiscount: {
+    attack: 30,
+    defense: 30,
+    utility: 30
+  },
   researchCatalog: INITIAL_RESEARCH_CATALOG,
   ultimateWeapons: INITIAL_UWS,
   modules: INITIAL_MODULES,
@@ -602,6 +621,24 @@ export const useStore = create<StoreState>()(
       updateLabSpeedMultiplier: (val) => set((state) => ({
         build: { ...state.build, labSpeedMultiplier: val }
       })),
+      setLabSpeedSettings: (labSpeedLevel, relicMult = 1.0) => set((state) => {
+        const speed = (1.0 + labSpeedLevel * 0.02) * relicMult;
+        return {
+          build: {
+            ...state.build,
+            labSpeedLevel,
+            labSpeedRelicMult: relicMult,
+            labSpeedMultiplier: Number(speed.toFixed(4))
+          }
+        };
+      }),
+      setDiscountSettings: (labCoinDiscountLevel, workshopDiscount) => set((state) => ({
+        build: {
+          ...state.build,
+          labCoinDiscountLevel,
+          workshopDiscount: workshopDiscount || state.build.workshopDiscount || { attack: 0, defense: 0, utility: 0 }
+        }
+      })),
       updateResearchCatalog: (id, updates) => set((state) => {
         const exists = state.build.researchCatalog.some((r) => r.id === id);
         let nextCatalog: ResearchEntry[];
@@ -610,13 +647,14 @@ export const useStore = create<StoreState>()(
             r.id === id ? { ...r, ...updates } : r
           );
         } else {
+          const lvl = updates.level ?? 1;
           const newEntry: ResearchEntry = {
             id,
             name: updates.name || id,
-            level: updates.level ?? 1,
-            change: updates.change || 'Lv.1 → Lv.2',
-            coinCost: updates.coinCost ?? 1000000,
-            baseTimeSeconds: updates.baseTimeSeconds ?? 86400,
+            level: lvl,
+            change: updates.change || `Lv.${lvl} → Lv.${lvl + 1}`,
+            coinCost: updates.coinCost ?? getLabCoinCost(id, lvl),
+            baseTimeSeconds: updates.baseTimeSeconds ?? getBaseLabTime(id, lvl),
             ...updates
           };
           nextCatalog = [...state.build.researchCatalog, newEntry];

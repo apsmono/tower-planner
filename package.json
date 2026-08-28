@@ -9,6 +9,7 @@
     "lint": "oxlint",
     "test": "vitest run",
     "test:watch": "vitest",
+    "db:seed:gen": "npx esbuild scripts/generate-seed.ts --bundle --format=esm --platform=node --define:import.meta.env=\"{}\" --packages=external --outfile=node_modules/.cache/generate-seed.mjs && node node_modules/.cache/generate-seed.mjs > supabase/seed.sql",
     "preview": "vite preview"
   },
   "dependencies": {
