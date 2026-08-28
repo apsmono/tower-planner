@@ -47,10 +47,10 @@ export function ResearchQueue() {
   const addTask = useStore((state) => state.addTask);
   const deleteTask = useStore((state) => state.deleteTask);
 
-  // States
-  const [currencyMode, setCurrencyMode] = useState<'split' | 'unified'>('split');
-  const [selectedRunId, setSelectedRunId] = useState<string>('latest');
-  const [labBoostSelect, setLabBoostSelect] = useState<number>(2.0); // Default 2.0x boost for queue calculations
+  // States (controls disabled/commented out per user request)
+  const [currencyMode] = useState<'split' | 'unified'>('split');
+  const [selectedRunId] = useState<string>('latest');
+  const [labBoostSelect] = useState<number>(2.0); // Default 2.0x boost for queue calculations
   const [activeCategory, setActiveCategory] = useState<LabCategory>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [showWikiCatalog, setShowWikiCatalog] = useState<boolean>(false);
@@ -67,7 +67,7 @@ export function ResearchQueue() {
   });
   
   const defaultExchangeRate = totalCells > 0 ? totalCoins / totalCells : 23000000; // 23M coins per cell
-  const [exchangeRateOverride, setExchangeRateOverride] = useState<number>(defaultExchangeRate);
+  const [exchangeRateOverride] = useState<number>(defaultExchangeRate);
 
   // Helper formatters
   const formatCompact = (num: number): string => {
@@ -420,7 +420,11 @@ export function ResearchQueue() {
         </div>
       )}
 
-      {/* Reference Run & Boost Controls */}
+      {/* 
+        Feature disabled/commented out per user request:
+        Reference Run & Boost Controls / Split vs Unified Currency Mode
+      */}
+      {/* 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center bg-zinc-900/40 p-4 rounded-xl border border-zinc-800/80">
         <div>
           <label className="text-xs text-zinc-500 font-mono uppercase block mb-1">Reference Run</label>
@@ -481,7 +485,6 @@ export function ResearchQueue() {
         </div>
       </div>
 
-      {/* Unified Currency Slider */}
       {currencyMode === 'unified' && (
         <div className="p-4 bg-zinc-900/30 border border-zinc-800/60 rounded-xl space-y-2 animate-fadeIn">
           <div className="flex justify-between items-center text-xs font-mono">
@@ -504,6 +507,7 @@ export function ResearchQueue() {
           </div>
         </div>
       )}
+      */}
 
       {/* Category & Search Filter Bar */}
       <div className="space-y-3">
