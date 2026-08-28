@@ -4,6 +4,8 @@ import { ImportRuns } from './components/ImportRuns';
 import { TierLab } from './components/TierLab';
 import { ResearchQueue } from './components/ResearchQueue';
 import { CellBudget } from './components/CellBudget';
+import { StonesPanel } from './components/StonesPanel';
+import { CardsPanel } from './components/CardsPanel';
 import { BuildState } from './components/BuildState';
 import { TournamentHistory } from './components/TournamentHistory';
 import { syncReferenceData } from './domain/refDataService';
@@ -48,6 +50,10 @@ function App() {
         return <ResearchQueue />;
       case 'cell-budget':
         return <CellBudget />;
+      case 'stones':
+        return <StonesPanel />;
+      case 'cards':
+        return <CardsPanel />;
       case 'build-state':
         return <BuildState />;
       case 'tournament':

@@ -1,218 +1,38 @@
-import React, { useState } from 'react';
-import { useStore, type LabSlot, UW_CONFIGS, getStatLevels, type UWUpgradeStatConfig } from '../domain/store';
+import { useState } from 'react';
+import { useStore, type LabSlot } from '../domain/store';
 import { CurrencyIcon } from './CurrencyIcon';
+import { StonesPanel } from './StonesPanel';
+import { CardsPanel } from './CardsPanel';
 import { 
   Sliders, 
   AlertTriangle, 
-  Database,
-  Layers,
-  Wrench,
+  Database, 
+  Layers, 
+  Wrench, 
   Sparkles,
-  Clock,
-  Trash2,
-  CheckCircle,
-  CheckCircle2,
-  ExternalLink,
-  BookOpen,
-  Zap,
-  ChevronDown,
-  ChevronUp
+  Clock, 
+  Trash2, 
+  CheckCircle, 
+  CheckCircle2 
 } from 'lucide-react';
 
-const UW_POWER_STONE_MILESTONES = [
-  { index: 1, label: '1st', cost: '5 stones', rawCost: 5 },
-  { index: 2, label: '2nd', cost: '50', rawCost: 50 },
-  { index: 3, label: '3rd', cost: '150', rawCost: 150 },
-  { index: 4, label: '4th', cost: '300', rawCost: 300 },
-  { index: 5, label: '5th', cost: '800', rawCost: 800 },
-  { index: 6, label: '6th', cost: '1,250', rawCost: 1250 },
-  { index: 7, label: '7th', cost: '1,750', rawCost: 1750 },
-  { index: 8, label: '8th', cost: '2,400', rawCost: 2400 },
-  { index: 9, label: '9th', cost: '3,000', rawCost: 3000 },
+type SubTabId = 'resources' | 'labs' | 'stones' | 'cards' | 'modules' | 'flags' | 'goals';
+
+const SUB_TABS: { id: SubTabId; label: string }[] = [
+  { id: 'resources', label: 'Resources' },
+  { id: 'labs', label: 'Labs' },
+  { id: 'stones', label: 'Stones & UWs' },
+  { id: 'cards', label: 'Cards' },
+  { id: 'modules', label: 'Modules' },
+  { id: 'flags', label: 'Flags' },
+  { id: 'goals', label: 'Goals' },
 ];
-
-function UWStatLevelControl({
-  statNumber,
-  config,
-  value,
-  onChange,
-  formatSecondsToTime
-}: {
-  statNumber: 1 | 2 | 3;
-  config: UWUpgradeStatConfig;
-  value: number;
-  onChange: (val: number) => void;
-  formatSecondsToTime: (sec: number) => string;
-}) {
-  const levels = getStatLevels(config);
-  const [showCustomInput, setShowCustomInput] = useState(false);
-  const [customInputValue, setCustomInputValue] = useState(value.toString());
-
-  // Find matching exact level or closest
-  const exactIndex = levels.findIndex(l => Math.abs(l.value - value) < 0.001);
-  const isCustom = exactIndex === -1;
-  const currentLevel = !isCustom ? levels[exactIndex] : null;
-
-  const handlePrevLevel = () => {
-    if (exactIndex > 0) {
-      onChange(levels[exactIndex - 1].value);
-    } else if (isCustom && levels.length > 0) {
-      const smaller = levels.slice().reverse().find(l => l.value < value);
-      if (smaller) onChange(smaller.value);
-      else onChange(levels[0].value);
-    }
-  };
-
-  const handleNextLevel = () => {
-    if (exactIndex !== -1 && exactIndex < levels.length - 1) {
-      onChange(levels[exactIndex + 1].value);
-    } else if (isCustom && levels.length > 0) {
-      const larger = levels.find(l => l.value > value);
-      if (larger) onChange(larger.value);
-      else onChange(levels[levels.length - 1].value);
-    }
-  };
-
-  return (
-    <div className="p-3.5 bg-zinc-900/70 border border-zinc-800/90 hover:border-zinc-700/80 transition-all rounded-lg space-y-2.5">
-      {/* Top Header: Stat Title & Actual Value Pill */}
-      <div className="flex justify-between items-center text-[11px] font-mono">
-        <span className="font-semibold text-zinc-300 uppercase tracking-wide">
-          {statNumber}. {config.label}
-        </span>
-        <div className="flex items-center space-x-1.5">
-          <span className="px-2 py-0.5 rounded-md bg-indigo-950/90 text-indigo-200 font-bold border border-indigo-700/60 font-mono text-xs shadow-xs">
-            {value}{config.unit}
-          </span>
-        </div>
-      </div>
-
-      {/* Level Selection Control */}
-      {!showCustomInput ? (
-        <div className="space-y-1.5">
-          <div className="flex items-center space-x-1.5">
-            {/* Quick Decrement Stepper */}
-            <button
-              type="button"
-              onClick={handlePrevLevel}
-              disabled={exactIndex === 0}
-              className="w-8 h-8 flex items-center justify-center rounded bg-zinc-950 border border-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-800 disabled:opacity-30 disabled:pointer-events-none transition-colors font-mono font-bold text-sm shrink-0 cursor-pointer"
-              title="Previous Level"
-            >
-              -
-            </button>
-
-            {/* Level Select Dropdown */}
-            <select
-              value={!isCustom ? value : '__custom__'}
-              onChange={(e) => {
-                if (e.target.value === '__custom__') {
-                  setCustomInputValue(value.toString());
-                  setShowCustomInput(true);
-                } else {
-                  onChange(parseFloat(e.target.value));
-                }
-              }}
-              className="flex-1 min-w-0 bg-zinc-950 border border-zinc-800 rounded px-2.5 py-1.5 text-xs text-zinc-100 font-mono focus:outline-none focus:border-indigo-500 cursor-pointer truncate"
-            >
-              {levels.map((l) => (
-                <option key={l.level} value={l.value}>
-                  Lv.{l.level} — {l.value}{config.unit}{config.unit === 's' && statNumber === 3 ? ` (${formatSecondsToTime(l.value)})` : ''}{l.level === levels.length ? ' (Max)' : ''}
-                </option>
-              ))}
-              {isCustom && (
-                <option value="__custom__">
-                  Custom — {value}{config.unit}
-                </option>
-              )}
-            </select>
-
-            {/* Quick Increment Stepper */}
-            <button
-              type="button"
-              onClick={handleNextLevel}
-              disabled={exactIndex === levels.length - 1}
-              className="w-8 h-8 flex items-center justify-center rounded bg-zinc-950 border border-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-800 disabled:opacity-30 disabled:pointer-events-none transition-colors font-mono font-bold text-sm shrink-0 cursor-pointer"
-              title="Next Level"
-            >
-              +
-            </button>
-          </div>
-
-          {/* Sub-info Line */}
-          <div className="flex items-center justify-between text-[10px] font-mono text-zinc-500 pt-0.5">
-            <span>
-              {currentLevel ? (
-                <>Level <strong className="text-zinc-200">{currentLevel.level}</strong> of {levels.length}</>
-              ) : (
-                <strong className="text-amber-400">Custom Value</strong>
-              )}
-            </span>
-            <button
-              type="button"
-              onClick={() => {
-                setCustomInputValue(value.toString());
-                setShowCustomInput(true);
-              }}
-              className="text-zinc-500 hover:text-indigo-400 underline transition-colors cursor-pointer"
-            >
-              Direct edit
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="space-y-1.5">
-          <div className="flex items-center space-x-1.5">
-            <input
-              type="number"
-              step={Math.abs(config.step ?? 1)}
-              value={customInputValue}
-              onChange={(e) => {
-                setCustomInputValue(e.target.value);
-                const parsed = parseFloat(e.target.value);
-                if (!isNaN(parsed)) onChange(parsed);
-              }}
-              className="flex-1 min-w-0 bg-zinc-950 border border-indigo-500/80 rounded px-2.5 py-1.5 text-xs text-zinc-100 font-mono focus:outline-none"
-              placeholder={`Enter custom ${config.label}`}
-            />
-            <button
-              type="button"
-              onClick={() => setShowCustomInput(false)}
-              className="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-xs font-mono font-semibold transition-colors shrink-0 cursor-pointer"
-            >
-              Done
-            </button>
-          </div>
-          <div className="flex items-center justify-between text-[10px] font-mono text-zinc-500">
-            <span>Custom numeric value</span>
-            <button
-              type="button"
-              onClick={() => setShowCustomInput(false)}
-              className="text-indigo-400 hover:text-indigo-300 transition-colors cursor-pointer"
-            >
-              ← Back to level selection
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Cooldown Interval Display */}
-      {config.unit === 's' && statNumber === 3 && (
-        <div className="pt-1.5 border-t border-zinc-800/60 flex items-center justify-between text-[10px] font-mono">
-          <span className="text-zinc-500">Cycle Frequency:</span>
-          <span className="text-amber-300 font-semibold">{formatSecondsToTime(value)}</span>
-        </div>
-      )}
-    </div>
-  );
-}
 
 export function BuildState() {
   const build = useStore((state) => state.build);
   const updateResources = useStore((state) => state.updateResources);
   const updateLabSlot = useStore((state) => state.updateLabSlot);
   const updateLabSpeedMultiplier = useStore((state) => state.updateLabSpeedMultiplier);
-  const updateUW = useStore((state) => state.updateUW);
   const updateModule = useStore((state) => state.updateModule);
   const addVerificationFlag = useStore((state) => state.addVerificationFlag);
   const removeVerificationFlag = useStore((state) => state.removeVerificationFlag);
@@ -221,18 +41,7 @@ export function BuildState() {
   const addTask = useStore((state) => state.addTask);
   const deleteTask = useStore((state) => state.deleteTask);
 
-  const [activeSubTab, setActiveSubTab] = useState<'resources' | 'labs' | 'uws' | 'modules' | 'flags' | 'goals'>('resources');
-  const [uwFilter, setUwFilter] = useState<'all' | 'acquired' | 'locked'>('all');
-  const [isWikiOpen, setIsWikiOpen] = useState<boolean>(true);
-
-  const formatSecondsToTime = (seconds: number): string => {
-    if (isNaN(seconds) || seconds <= 0) return '0s';
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    if (mins === 0) return `${secs}s`;
-    if (secs === 0) return `${mins}m`;
-    return `${mins}m ${secs}s`;
-  };
+  const [activeSubTab, setActiveSubTab] = useState<SubTabId>('resources');
 
   // Add Goal form state
   const [newGoalType, setNewGoalType] = useState<'research' | 'resource'>('research');
@@ -294,7 +103,7 @@ export function BuildState() {
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Page Header */}
       <div>
         <h2 className="text-2xl font-bold tracking-tight text-white">Build State</h2>
@@ -304,18 +113,18 @@ export function BuildState() {
       </div>
 
       {/* Sub Tabs */}
-      <div className="flex space-x-2 border-b border-zinc-800 pb-px">
-        {(['resources', 'labs', 'uws', 'modules', 'flags', 'goals'] as const).map((tab) => (
+      <div className="flex space-x-2 border-b border-zinc-800 pb-px overflow-x-auto">
+        {SUB_TABS.map((tab) => (
           <button
-            key={tab}
-            onClick={() => setActiveSubTab(tab)}
-            className={`px-4 py-2 text-xs font-semibold uppercase tracking-wider font-mono border-b-2 transition-all ${
-              activeSubTab === tab 
+            key={tab.id}
+            onClick={() => setActiveSubTab(tab.id)}
+            className={`px-4 py-2 text-xs font-semibold uppercase tracking-wider font-mono border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+              activeSubTab === tab.id 
                 ? 'border-indigo-500 text-indigo-400' 
                 : 'border-transparent text-zinc-500 hover:text-zinc-300'
             }`}
           >
-            {tab === 'uws' ? 'UWs' : tab}
+            {tab.label}
           </button>
         ))}
       </div>
@@ -450,52 +259,55 @@ export function BuildState() {
 
           <div className="space-y-4">
             {build.labs.map((lab, index) => (
-              <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-zinc-950/40 border border-zinc-800/80 rounded-lg text-sm items-center">
-                <div className="font-semibold text-zinc-300 flex items-center space-x-2">
-                  <span className="w-5 h-5 rounded-full bg-zinc-800 text-[10px] text-zinc-400 font-mono flex items-center justify-center">
-                    {index + 1}
+              <div key={index} className="p-4 bg-zinc-950/40 border border-zinc-800 rounded-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-center space-x-3">
+                  <span className="w-6 h-6 rounded bg-indigo-950 text-indigo-300 border border-indigo-700/50 flex items-center justify-center font-mono text-xs font-bold shrink-0">
+                    #{index + 1}
                   </span>
-                  <span>Lab Lane {index + 1}</span>
-                </div>
-                
-                <div>
-                  <label className="text-[10px] text-zinc-500 font-mono uppercase block mb-1">Active Research ID</label>
-                  <input
-                    type="text"
-                    value={lab.researchId || ''}
-                    placeholder="Idle"
-                    onChange={(e) => handleLabChange(index, 'researchId', e.target.value || null)}
-                    className="w-full bg-zinc-900 border border-zinc-800 rounded p-1.5 text-xs text-zinc-200 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[10px] text-zinc-500 font-mono uppercase block mb-1">Level</label>
-                  <input
-                    type="number"
-                    value={lab.level}
-                    onChange={(e) => handleLabChange(index, 'level', e.target.value)}
-                    className="w-full bg-zinc-900 border border-zinc-800 rounded p-1.5 text-xs text-zinc-200 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[10px] text-zinc-500 font-mono uppercase block mb-1">Cell Speed Boost</label>
                   <select
-                    value={lab.boost}
-                    onChange={(e) => handleLabChange(index, 'boost', e.target.value)}
-                    className="w-full bg-zinc-900 border border-zinc-800 rounded p-1.5 text-xs text-zinc-200 focus:outline-none"
+                    value={lab.researchId || ''}
+                    onChange={(e) => handleLabChange(index, 'researchId', e.target.value || null)}
+                    className="bg-zinc-900 border border-zinc-700/80 rounded p-2 text-sm text-zinc-100 font-mono focus:border-indigo-500 focus:outline-none min-w-[200px]"
                   >
-                    <option value="1">1.0x (No Boost)</option>
-                    <option value="1.5">1.5x Boost</option>
-                    <option value="2">2.0x Boost</option>
-                    <option value="3">3.0x Boost</option>
-                    <option value="4">4.0x Boost</option>
-                    <option value="5">5.0x Boost</option>
-                    <option value="6">6.0x Boost</option>
-                    <option value="7">7.0x Boost</option>
-                    <option value="8">8.0x Boost</option>
+                    <option value="">-- Unassigned / Idle --</option>
+                    {build.researchCatalog.map((r) => (
+                      <option key={r.id} value={r.id}>
+                        {r.name} (Lv.{r.level})
+                      </option>
+                    ))}
                   </select>
+                </div>
+
+                <div className="flex items-center space-x-4">
+                  <div>
+                    <label className="text-[10px] text-zinc-500 font-mono block">Level</label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={lab.level}
+                      onChange={(e) => handleLabChange(index, 'level', e.target.value)}
+                      className="w-16 bg-zinc-900 border border-zinc-700/80 rounded p-1.5 text-xs text-zinc-100 font-mono focus:border-indigo-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] text-zinc-500 font-mono block">Speed Boost</label>
+                    <select
+                      value={lab.boost}
+                      onChange={(e) => handleLabChange(index, 'boost', e.target.value)}
+                      className="bg-zinc-900 border border-zinc-700/80 rounded p-1.5 text-xs text-purple-300 font-mono focus:border-indigo-500 focus:outline-none"
+                    >
+                      <option value="1">1.0x</option>
+                      <option value="1.5">1.5x</option>
+                      <option value="2">2.0x</option>
+                      <option value="3">3.0x</option>
+                      <option value="4">4.0x</option>
+                      <option value="5">5.0x</option>
+                      <option value="6">6.0x</option>
+                      <option value="7">7.0x</option>
+                      <option value="8">8.0x</option>
+                    </select>
+                  </div>
                 </div>
               </div>
             ))}
@@ -503,514 +315,15 @@ export function BuildState() {
         </div>
       )}
 
-      {/* Ultimate Weapons */}
-      {activeSubTab === 'uws' && (() => {
-        const unlockedCount = build.ultimateWeapons.filter(u => u.unlocked).length;
-        const activeCount = build.ultimateWeapons.filter(u => u.unlocked && u.active).length;
-        
-        const gtUW = build.ultimateWeapons.find(u => u.id === 'gt');
-        const bhUW = build.ultimateWeapons.find(u => u.id === 'bh');
-        const gtCooldown = gtUW?.upgrades?.stat3 ?? UW_CONFIGS.gt.stat3.defaultVal;
-        const bhCooldown = bhUW?.upgrades?.stat3 ?? UW_CONFIGS.bh.stat3.defaultVal;
-        const isGtBhSynced = gtUW?.unlocked && bhUW?.unlocked && gtCooldown === bhCooldown;
+      {/* Stones & Ultimate Weapons Panel */}
+      {activeSubTab === 'stones' && (
+        <StonesPanel />
+      )}
 
-        // Calculate stone metrics
-        const stonesSpentOnUnlocks = UW_POWER_STONE_MILESTONES
-          .filter(m => m.index <= unlockedCount)
-          .reduce((sum, m) => sum + m.rawCost, 0);
-        const currentStones = build.resources.stones || 0;
-        const totalAcquiredStones = stonesSpentOnUnlocks + currentStones;
-
-        // Sort acquired UWs always at top
-        const sortedUWs = [...build.ultimateWeapons].sort((a, b) => {
-          if (a.unlocked && !b.unlocked) return -1;
-          if (!a.unlocked && b.unlocked) return 1;
-          return 0;
-        });
-
-        const filteredUWs = sortedUWs.filter(u => {
-          if (uwFilter === 'acquired') return u.unlocked;
-          if (uwFilter === 'locked') return !u.unlocked;
-          return true;
-        });
-
-        const handleUpgradeChange = (uwId: string, statKey: 'stat1' | 'stat2' | 'stat3', val: string) => {
-          const num = parseFloat(val);
-          const currUW = build.ultimateWeapons.find(u => u.id === uwId);
-          const config = UW_CONFIGS[uwId];
-          const currUpgrades = currUW?.upgrades || {
-            stat1: config.stat1.defaultVal,
-            stat2: config.stat2.defaultVal,
-            stat3: config.stat3.defaultVal
-          };
-          updateUW(uwId, {
-            upgrades: {
-              ...currUpgrades,
-              [statKey]: isNaN(num) ? 0 : num
-            }
-          });
-        };
-
-        const handleToggleUnlocked = (uwId: string, unlocked: boolean) => {
-          const config = UW_CONFIGS[uwId];
-          const currUW = build.ultimateWeapons.find(u => u.id === uwId);
-          const upgrades = currUW?.upgrades || {
-            stat1: config.stat1.defaultVal,
-            stat2: config.stat2.defaultVal,
-            stat3: config.stat3.defaultVal
-          };
-          updateUW(uwId, {
-            unlocked,
-            active: unlocked ? (currUW?.active ?? true) : false,
-            upgrades
-          });
-        };
-
-        return (
-          <div className="space-y-6 animate-fadeIn">
-            {/* Header / Summary Bar */}
-            <div className="p-5 glass-panel rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4 glow-indigo">
-              <div>
-                <div className="flex items-center space-x-2">
-                  <Sparkles className="w-5 h-5 text-indigo-400" />
-                  <h3 className="text-base font-semibold text-white tracking-wide">
-                    Ultimate Weapons Armory
-                  </h3>
-                  <span className="px-2 py-0.5 rounded-full bg-indigo-950/80 border border-indigo-800/60 text-indigo-300 text-xs font-mono font-medium">
-                    {unlockedCount} / {build.ultimateWeapons.length} Acquired
-                  </span>
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-950/80 border border-emerald-800/60 text-emerald-300 text-xs font-mono font-medium">
-                    {activeCount} Active
-                  </span>
-                </div>
-                <p className="text-xs text-zinc-400 mt-1">
-                  Manage acquired weapon statuses, active run toggles, and their 3 primary stone workshop upgrades.
-                </p>
-              </div>
-
-              {/* Filter Pills */}
-              <div className="flex items-center bg-zinc-950/80 p-1 rounded-lg border border-zinc-800 text-xs font-mono">
-                <button
-                  type="button"
-                  onClick={() => setUwFilter('all')}
-                  className={`px-3 py-1.5 rounded transition-all ${
-                    uwFilter === 'all'
-                      ? 'bg-indigo-600 text-white font-semibold shadow shadow-indigo-500/40 dark:shadow-black/20'
-                      : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800'
-                  }`}
-                >
-                  All ({build.ultimateWeapons.length})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setUwFilter('acquired')}
-                  className={`px-3 py-1.5 rounded transition-all ${
-                    uwFilter === 'acquired'
-                      ? 'bg-indigo-600 text-white font-semibold shadow shadow-indigo-500/40 dark:shadow-black/20'
-                      : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800'
-                  }`}
-                >
-                  Acquired ({unlockedCount})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setUwFilter('locked')}
-                  className={`px-3 py-1.5 rounded transition-all ${
-                    uwFilter === 'locked'
-                      ? 'bg-indigo-600 text-white font-semibold shadow shadow-indigo-500/40 dark:shadow-black/20'
-                      : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800'
-                  }`}
-                >
-                  Locked ({build.ultimateWeapons.length - unlockedCount})
-                </button>
-              </div>
-            </div>
-
-            {/* Power Stone Economy Summary Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 font-mono">
-              <div className="p-3.5 bg-zinc-900/60 border border-zinc-800 rounded-xl flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] text-zinc-400 uppercase tracking-wider block font-semibold">
-                    Stones Total Spent
-                  </span>
-                  <span className="text-base sm:text-lg font-bold text-amber-400">
-                    {stonesSpentOnUnlocks.toLocaleString()}
-                  </span>
-                  <span className="text-[10px] text-zinc-500 block font-sans">
-                    on {unlockedCount} UW unlocks
-                  </span>
-                </div>
-                <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400">
-                  <Database className="w-5 h-5" />
-                </div>
-              </div>
-
-              <div className="p-3.5 bg-zinc-900/60 border border-zinc-800 rounded-xl flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] text-zinc-400 uppercase tracking-wider block font-semibold">
-                    Stones Rest (Inventory)
-                  </span>
-                  <span className="text-base sm:text-lg font-bold text-teal-400">
-                    {currentStones.toLocaleString()}
-                  </span>
-                  <span className="text-[10px] text-zinc-500 block font-sans">
-                    available balance
-                  </span>
-                </div>
-                <div className="p-2 rounded-lg bg-teal-500/10 border border-teal-500/20 text-teal-400">
-                  <Sparkles className="w-5 h-5" />
-                </div>
-              </div>
-
-              <div className="p-3.5 bg-zinc-900/60 border border-zinc-800 rounded-xl flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] text-zinc-400 uppercase tracking-wider block font-semibold">
-                    Total Acquired Stones
-                  </span>
-                  <span className="text-base sm:text-lg font-bold text-emerald-400">
-                    {totalAcquiredStones.toLocaleString()}
-                  </span>
-                  <span className="text-[10px] text-zinc-500 block font-sans">
-                    lifetime stones earned
-                  </span>
-                </div>
-                <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-                  <CheckCircle2 className="w-5 h-5" />
-                </div>
-              </div>
-            </div>
-
-            {/* Synergy Check Banner (GT + BH) */}
-            {gtUW?.unlocked && bhUW?.unlocked && (
-              <div className={`p-4 rounded-xl border flex items-start space-x-3 text-xs ${
-                isGtBhSynced 
-                  ? 'bg-emerald-950/20 border-emerald-800/40 text-emerald-300'
-                  : 'bg-amber-950/20 border-amber-800/40 text-amber-300'
-              }`}>
-                {isGtBhSynced ? (
-                  <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-                ) : (
-                  <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-                )}
-                <div className="space-y-0.5">
-                  <span className="font-semibold text-sm block">
-                    {isGtBhSynced
-                      ? `Golden Tower & Black Hole Synchronized (${formatSecondsToTime(gtCooldown)})`
-                      : 'Golden Tower & Black Hole Desynchronized!'}
-                  </span>
-                  <p className="text-zinc-400 leading-normal">
-                    {isGtBhSynced ? (
-                      <>GT and BH are activating at identical intervals ({gtCooldown}s). Coin multipliers stack multiplicatively inside the Black Hole for max yield.</>
-                    ) : (
-                      <>GT cooldown is <strong>{gtCooldown}s</strong> ({formatSecondsToTime(gtCooldown)}) while BH is <strong>{bhCooldown}s</strong> ({formatSecondsToTime(bhCooldown)}). Community golden rule: synchronize cooldowns to match simultaneously.</>
-                    )}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* UW List */}
-            <div className="space-y-4">
-              {filteredUWs.map((uw) => {
-                const config = UW_CONFIGS[uw.id] || {
-                  id: uw.id,
-                  name: uw.name,
-                  shortName: uw.id.toUpperCase(),
-                  description: 'Ultimate Weapon upgrade stats.',
-                  wikiUrl: `https://the-tower-idle-tower-defense.fandom.com/wiki/${encodeURIComponent(uw.name.replace(/\s+/g, '_'))}`,
-                  themeColor: 'from-zinc-800/20 to-zinc-900/10 border-zinc-700/40 text-zinc-300',
-                  stat1: { label: 'Stat 1', unit: '', defaultVal: 0, step: 1 },
-                  stat2: { label: 'Stat 2', unit: '', defaultVal: 0, step: 1 },
-                  stat3: { label: 'Stat 3', unit: '', defaultVal: 0, step: 1 }
-                };
-
-                const upgrades = uw.upgrades || {
-                  stat1: config.stat1.defaultVal,
-                  stat2: config.stat2.defaultVal,
-                  stat3: config.stat3.defaultVal
-                };
-
-                const isAcquired = uw.unlocked;
-                const isActive = uw.unlocked && (uw.active ?? true);
-
-                return (
-                  <div
-                    key={uw.id}
-                    className={`glass-panel rounded-xl border transition-all overflow-hidden ${
-                      isAcquired
-                        ? 'bg-zinc-950/50 border-zinc-800 shadow-md hover:border-zinc-700'
-                        : 'bg-zinc-950/20 border-zinc-800/40 opacity-75 hover:opacity-100'
-                    }`}
-                  >
-                    {/* Top Row / Card Header */}
-                    <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-800/50 bg-gradient-to-r from-zinc-900/40 via-transparent to-transparent">
-                      <div className="flex items-center space-x-3.5">
-                        {/* Acquired Checkbox */}
-                        <label className="flex items-center space-x-2 cursor-pointer group">
-                          <input
-                            type="checkbox"
-                            checked={isAcquired}
-                            onChange={(e) => handleToggleUnlocked(uw.id, e.target.checked)}
-                            className="rounded border-zinc-700 bg-zinc-900 text-indigo-500 focus:ring-indigo-500 w-4 h-4 cursor-pointer"
-                          />
-                          <span className={`text-xs font-mono uppercase tracking-wider font-semibold ${
-                            isAcquired ? 'text-indigo-300' : 'text-zinc-500 group-hover:text-zinc-300'
-                          }`}>
-                            {isAcquired ? 'Acquired' : 'Locked'}
-                          </span>
-                        </label>
-
-                        <span className="text-zinc-700">|</span>
-
-                        {/* Title & Badge */}
-                        <div className="flex items-center space-x-2">
-                          <span className={`px-2 py-0.5 rounded text-[11px] font-mono font-bold uppercase tracking-wider border ${config.themeColor}`}>
-                            {config.shortName}
-                          </span>
-                          <span className={`font-semibold text-sm sm:text-base ${isAcquired ? 'text-white' : 'text-zinc-400'}`}>
-                            {uw.name}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Right Action Controls */}
-                      <div className="flex items-center space-x-3 self-end sm:self-auto">
-                        {/* Active in Run Checkbox */}
-                        {isAcquired && (
-                          <label className="flex items-center space-x-2 cursor-pointer px-2.5 py-1 rounded bg-zinc-900/80 border border-zinc-800 hover:border-zinc-700 transition-colors">
-                            <input
-                              type="checkbox"
-                              checked={isActive}
-                              onChange={(e) => updateUW(uw.id, { active: e.target.checked })}
-                              className="rounded border-zinc-700 bg-zinc-950 text-emerald-500 focus:ring-emerald-500 w-3.5 h-3.5 cursor-pointer"
-                            />
-                            <span className={`text-xs font-mono ${isActive ? 'text-emerald-400 font-medium' : 'text-zinc-500'}`}>
-                              {isActive ? 'Active in Run' : 'Disabled'}
-                            </span>
-                          </label>
-                        )}
-
-                        {/* Direct Wiki Link Button */}
-                        <a
-                          href={config.wikiUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          title={`View ${uw.name} Wiki Guide`}
-                          className="flex items-center space-x-1 px-2.5 py-1 rounded text-xs font-mono bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-indigo-300 hover:border-indigo-800/60 transition-colors"
-                        >
-                          <BookOpen className="w-3.5 h-3.5 text-indigo-400" />
-                          <span>Wiki</span>
-                          <ExternalLink className="w-3 h-3 ml-0.5 opacity-60" />
-                        </a>
-                      </div>
-                    </div>
-
-                    {/* Card Body */}
-                    <div className="p-4 sm:p-5 space-y-4">
-                      {/* Description */}
-                      <p className="text-xs text-zinc-400 leading-relaxed">
-                        {config.description}
-                      </p>
-
-                      {/* 3 Main Upgrades */}
-                      {isAcquired ? (
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
-                          <UWStatLevelControl
-                            statNumber={1}
-                            config={config.stat1}
-                            value={upgrades.stat1}
-                            onChange={(val) => handleUpgradeChange(uw.id, 'stat1', val.toString())}
-                            formatSecondsToTime={formatSecondsToTime}
-                          />
-                          <UWStatLevelControl
-                            statNumber={2}
-                            config={config.stat2}
-                            value={upgrades.stat2}
-                            onChange={(val) => handleUpgradeChange(uw.id, 'stat2', val.toString())}
-                            formatSecondsToTime={formatSecondsToTime}
-                          />
-                          <UWStatLevelControl
-                            statNumber={3}
-                            config={config.stat3}
-                            value={upgrades.stat3}
-                            onChange={(val) => handleUpgradeChange(uw.id, 'stat3', val.toString())}
-                            formatSecondsToTime={formatSecondsToTime}
-                          />
-                        </div>
-                      ) : (
-                        <div className="p-3.5 bg-zinc-900/30 border border-zinc-800/40 rounded-lg flex items-center justify-between">
-                          <span className="text-xs text-zinc-500">
-                            Weapon currently unacquired. Click to acquire and configure stone upgrades:
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => handleToggleUnlocked(uw.id, true)}
-                            className="px-3 py-1.5 bg-indigo-600/80 hover:bg-indigo-600 text-white rounded text-xs font-semibold font-mono transition-colors"
-                          >
-                            + Acquire Weapon
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Wiki Reference Section */}
-            <div className="glass-panel rounded-xl border border-zinc-800 overflow-hidden">
-              <button
-                type="button"
-                onClick={() => setIsWikiOpen(!isWikiOpen)}
-                className="w-full p-4 flex items-center justify-between bg-zinc-950/60 hover:bg-zinc-900/40 transition-colors text-left"
-              >
-                <div className="flex items-center space-x-2.5">
-                  <BookOpen className="w-4 h-4 text-indigo-400" />
-                  <span className="text-sm font-semibold text-zinc-200 font-mono uppercase tracking-wider">
-                    Wiki Knowledge Base & Strategy Reference
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2 text-xs text-zinc-500">
-                  <span>{isWikiOpen ? 'Collapse' : 'Expand Guide'}</span>
-                  {isWikiOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                </div>
-              </button>
-
-              {isWikiOpen && (
-                <div className="p-5 space-y-6 border-t border-zinc-800 bg-zinc-950/40 text-xs text-zinc-300 animate-fadeIn">
-                  {/* Grid of Strategy Callouts */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Strategy 1: Holy Trinity Sync */}
-                    <div className="p-4 bg-zinc-900/50 border border-zinc-800 rounded-lg space-y-2">
-                      <div className="flex items-center space-x-2 text-indigo-400 font-semibold">
-                        <Zap className="w-4 h-4" />
-                        <span>The "Holy Trinity" Synchronization (GT + BH + DW)</span>
-                      </div>
-                      <p className="text-zinc-400 leading-relaxed">
-                        Golden Tower, Black Hole, and Death Wave form the core economic engine. Their multipliers compound multiplicatively when triggered simultaneously.
-                      </p>
-                      <div className="p-2 bg-zinc-950 rounded border border-zinc-800 font-mono text-[11px] text-zinc-300">
-                        Target Baseline Sync: <strong>3:20 (200s)</strong> cooldown across GT, BH, and DW.
-                      </div>
-                    </div>
-
-                    {/* Strategy 2: Stone Economy */}
-                    <div className="p-4 bg-zinc-900/50 border border-zinc-800 rounded-lg space-y-2.5">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2 text-emerald-400 font-semibold">
-                          <Database className="w-4 h-4" />
-                          <span>Power Stone Milestone Costs</span>
-                        </div>
-                        {unlockedCount < 9 ? (
-                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 font-semibold">
-                            Next ({UW_POWER_STONE_MILESTONES[unlockedCount]?.label}): {UW_POWER_STONE_MILESTONES[unlockedCount]?.rawCost.toLocaleString()} stones
-                          </span>
-                        ) : (
-                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-semibold">
-                            All UWs Unlocked (9/9)
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-zinc-400 leading-relaxed text-xs">
-                        Power Stones are the rarest progression currency. Unlocking new UWs scales exponentially:
-                      </p>
-                      <div className="grid grid-cols-3 gap-1.5 font-mono text-[10px]">
-                        {UW_POWER_STONE_MILESTONES.map((m) => {
-                          const isNext = m.index === unlockedCount + 1;
-                          const isUnlocked = m.index <= unlockedCount;
-                          return (
-                            <span
-                              key={m.index}
-                              className={`px-1.5 py-0.5 rounded transition-colors flex items-center justify-between ${
-                                isNext
-                                  ? 'text-emerald-300 font-bold bg-emerald-500/20 border border-emerald-500/40 shadow-xs'
-                                  : isUnlocked
-                                  ? 'text-zinc-500 line-through decoration-zinc-700'
-                                  : 'text-zinc-400'
-                              }`}
-                              title={
-                                isNext
-                                  ? `Next UW unlock cost (${m.cost} stones)`
-                                  : isUnlocked
-                                  ? `Already unlocked (${m.label} UW)`
-                                  : `Future unlock (${m.cost} stones)`
-                              }
-                            >
-                              <span>{m.label}: {m.cost}</span>
-                              {isNext && (
-                                <span className="text-[9px] font-extrabold text-emerald-400 uppercase tracking-wider ml-1 bg-emerald-400/20 px-1 rounded">
-                                  Next
-                                </span>
-                              )}
-                            </span>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Strategy 3: UW Plus */}
-                    <div className="p-4 bg-zinc-900/50 border border-zinc-800 rounded-lg space-y-2">
-                      <div className="flex items-center space-x-2 text-purple-400 font-semibold">
-                        <Sparkles className="w-4 h-4" />
-                        <span>Ultimate Weapon Plus (UW+)</span>
-                      </div>
-                      <p className="text-zinc-400 leading-relaxed">
-                        Once all 9 Ultimate Weapons are unlocked, UW+ abilities become available:
-                      </p>
-                      <ul className="list-disc list-inside space-y-0.5 text-zinc-400 font-mono text-[11px]">
-                        <li><strong>Golden Combo (GT):</strong> Incremental kill multiplier.</li>
-                        <li><strong>Consume (BH):</strong> Deals % current wave HP.</li>
-                        <li><strong>Cover Fire (SM):</strong> Launches passive missile salvos.</li>
-                      </ul>
-                    </div>
-
-                    {/* Strategy 4: Cooldown Golden Rule */}
-                    <div className="p-4 bg-zinc-900/50 border border-zinc-800 rounded-lg space-y-2">
-                      <div className="flex items-center space-x-2 text-rose-400 font-semibold">
-                        <AlertTriangle className="w-4 h-4" />
-                        <span>The Cooldown Upgrade Warning</span>
-                      </div>
-                      <p className="text-zinc-400 leading-relaxed">
-                        <strong>Never upgrade GT or DW cooldown piecemeal</strong> if it breaks synchronization with Black Hole. Save enough Power Stones to drop down in a single synchronized tier leap.
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Quick Wiki Links Table / Grid */}
-                  <div>
-                    <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-400 block mb-2 font-semibold">
-                      Direct Official Fandom Wiki References
-                    </span>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
-                      {Object.values(UW_CONFIGS).map((config) => (
-                        <a
-                          key={config.id}
-                          href={config.wikiUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-2.5 bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 hover:border-zinc-700 rounded-lg flex items-center justify-between text-xs font-mono text-zinc-300 transition-colors"
-                        >
-                          <span className="truncate">{config.name}</span>
-                          <ExternalLink className="w-3 h-3 text-indigo-400 shrink-0 ml-1 opacity-75" />
-                        </a>
-                      ))}
-                      <a
-                        href="https://the-tower-idle-tower-defense.fandom.com/wiki/Ultimate_Weapons"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-2.5 bg-indigo-950/40 hover:bg-indigo-950/60 border border-indigo-800/40 rounded-lg flex items-center justify-between text-xs font-mono text-indigo-300 transition-colors"
-                      >
-                        <span className="font-semibold truncate">All UWs Wiki</span>
-                        <ExternalLink className="w-3 h-3 text-indigo-400 shrink-0 ml-1" />
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        );
-      })()}
+      {/* Cards & Slots Panel */}
+      {activeSubTab === 'cards' && (
+        <CardsPanel />
+      )}
 
       {/* Modules */}
       {activeSubTab === 'modules' && (
