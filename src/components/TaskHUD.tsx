@@ -60,7 +60,7 @@ export function TaskHUD() {
           <p className="mt-1 text-[10px] text-indigo-400/80">Pin items in the Research Queue or add resource targets in Build State!</p>
         </div>
       ) : (
-        <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1 scrollbar-thin">
+        <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
           {activeTasks.map((task) => {
             const { label, pct, iconEl } = getProgressInfo(task);
             return (

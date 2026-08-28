@@ -376,7 +376,6 @@ export function Layout({ activeTab, setActiveTab, children }: LayoutProps) {
         {/* ── 2. Middle Column (Active Workspace Content) ──────────── */}
         <main className="flex-1 min-w-0 p-4 md:p-8 overflow-y-auto">
           <div className="max-w-7xl mx-auto w-full">
-            <AuthSyncBanner onOpenAuth={handleOpenAuth} />
             {children}
           </div>
         </main>

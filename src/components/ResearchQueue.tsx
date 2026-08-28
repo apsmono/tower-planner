@@ -337,7 +337,7 @@ export function ResearchQueue() {
           </div>
 
           {/* Master Labs Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-[300px] overflow-y-auto pr-1 scrollbar-thin">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-[300px] overflow-y-auto pr-1">
             {masterWikiLabs.map((lab) => {
               const isAlreadyInPlanner = build.researchCatalog.some((r) => r.id === lab.id);
               return (
@@ -566,7 +566,7 @@ export function ResearchQueue() {
 
       {/* Research Rankings Table */}
       <div className="space-y-4">
-        <div className="overflow-auto border border-zinc-800/80 rounded-xl glass-panel max-h-[60vh] scrollbar-gutter-stable">
+        <div className="overflow-auto border border-zinc-800/80 rounded-xl glass-panel max-h-[60vh]">
           <table className="w-full text-left text-sm text-zinc-300 min-w-[950px]">
             <thead className="bg-zinc-900/95 backdrop-blur-sm text-zinc-400 text-xs font-mono uppercase border-b border-zinc-800 sticky top-0 z-10">
               {currencyMode === 'split' ? (
