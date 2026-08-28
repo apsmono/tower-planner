@@ -3,11 +3,11 @@
 - [ ] **1. Review all docs again, from scratchpad**
   - Cross-check notes, plans, walkthroughs, and scratchpads in `docs/Scratchpad/` and `docs/Plan/` to ensure documentation and implementation alignment.
 
-- [ ] **2. Check all available currencies in "The Tower - Idle Tower Defense" game**
+- [x] **2. Check all available currencies in "The Tower - Idle Tower Defense" game**
   - Audit all in-game currencies (Coins, Gems/Diamonds, Stones/Power Stones, Cells/Reroll Shards/Module Shards, Medals, Keys, Tournament Tickets, etc.) and verify icon assets, labels, and formatting.
 
-- [ ] **3. Add changelog wiki**
-  - Set up a comprehensive changelog / wiki section or document tracking patch updates, version notes, and feature additions.
+- [x] **3. Add changelog wiki**
+  - Set up a comprehensive changelog / wiki section or document tracking patch updates, version notes, and feature additions (`src/data/changelogData.ts`).
 
 - [ ] **4. Add our own wiki and database**
   - Build out a built-in wiki and centralized reference database (cross-referencing other community resources, wikis, and game data to compare and validate numbers).
@@ -35,5 +35,10 @@
     - **Farm Run**: Standard coin/cell economy and income farming runs.
     - **Push / Milestone Run**: Pushing for maximum wave records, tier unlocks, and milestone rewards.
   - Provide filter and toggle controls to include/exclude specific run categories from charts, hourly rates, and average progression stats.
+
+- [x] **11. Rule: Always use modals to edit values**
+  - Enforce a standard UX pattern across all views, tables, and lists: editing any value, level, target, or configuration must open in a dedicated edit modal (with preview/confirm/cancel actions) instead of crowded inline inputs.
+  - Added and documented in `.agents/rules/modals_ux.md`.
+
 
 

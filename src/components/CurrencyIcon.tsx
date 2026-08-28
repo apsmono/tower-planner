@@ -1,4 +1,15 @@
-export type CurrencyType = 'coins' | 'cash' | 'gems' | 'stones' | 'cells' | 'medals' | 'shards' | 'keys';
+export type CurrencyType = 
+  | 'coins' 
+  | 'cash' 
+  | 'gems' 
+  | 'stones' 
+  | 'cells' 
+  | 'medals' 
+  | 'shards' 
+  | 'reroll_shards' 
+  | 'module_shards' 
+  | 'keys' 
+  | 'tickets';
 
 interface CurrencyConfig {
   name: string;
@@ -61,15 +72,15 @@ export const CURRENCY_CONFIG: Record<CurrencyType, CurrencyConfig> = {
     name: 'Elite Cells',
     symbol: '▲',
     color: '#f59e0b',
-    textColor: 'text-purple-400',
-    borderColor: 'border-purple-500/30',
-    bgColor: 'bg-purple-950/20',
+    textColor: 'text-amber-400',
+    borderColor: 'border-amber-500/30',
+    bgColor: 'bg-amber-950/20',
     imageSrc: '/assets/currencies/cells.png',
     webpSrc: '/assets/currencies/cells.webp',
     svgSrc: '/assets/currencies/cells.svg',
   },
   medals: {
-    name: 'Medals',
+    name: 'Event Medals',
     symbol: '🎖️',
     color: '#f43f5e',
     textColor: 'text-rose-400',
@@ -77,19 +88,43 @@ export const CURRENCY_CONFIG: Record<CurrencyType, CurrencyConfig> = {
     bgColor: 'bg-rose-950/20',
     imageSrc: '/assets/currencies/medals.png',
     webpSrc: '/assets/currencies/medals.webp',
+    svgSrc: '/assets/currencies/medals.png',
   },
   shards: {
     name: 'Reroll Shards',
     symbol: '🎲',
-    color: '#a855f7',
+    color: '#c084fc',
     textColor: 'text-purple-400',
     borderColor: 'border-purple-500/30',
     bgColor: 'bg-purple-950/20',
     imageSrc: '/assets/currencies/shards.png',
     webpSrc: '/assets/currencies/shards.webp',
+    svgSrc: '/assets/currencies/reroll_shards.svg',
+  },
+  reroll_shards: {
+    name: 'Reroll Shards',
+    symbol: '🎲',
+    color: '#c084fc',
+    textColor: 'text-purple-400',
+    borderColor: 'border-purple-500/30',
+    bgColor: 'bg-purple-950/20',
+    imageSrc: '/assets/currencies/shards.png',
+    webpSrc: '/assets/currencies/shards.webp',
+    svgSrc: '/assets/currencies/reroll_shards.svg',
+  },
+  module_shards: {
+    name: 'Module Shards',
+    symbol: '🔷',
+    color: '#22c55e',
+    textColor: 'text-emerald-400',
+    borderColor: 'border-emerald-500/30',
+    bgColor: 'bg-emerald-950/20',
+    imageSrc: '/assets/currencies/module_shards.svg',
+    webpSrc: '/assets/currencies/module_shards.svg',
+    svgSrc: '/assets/currencies/module_shards.svg',
   },
   keys: {
-    name: 'Tourney Keys',
+    name: 'Relic Keys',
     symbol: '🔑',
     color: '#ef4444',
     textColor: 'text-rose-400',
@@ -98,6 +133,17 @@ export const CURRENCY_CONFIG: Record<CurrencyType, CurrencyConfig> = {
     imageSrc: '/assets/currencies/keys.svg',
     webpSrc: '/assets/currencies/keys.svg',
     svgSrc: '/assets/currencies/keys.svg',
+  },
+  tickets: {
+    name: 'Tournament Tickets',
+    symbol: '🎟️',
+    color: '#f59e0b',
+    textColor: 'text-amber-400',
+    borderColor: 'border-amber-500/30',
+    bgColor: 'bg-amber-950/20',
+    imageSrc: '/assets/currencies/tickets.svg',
+    webpSrc: '/assets/currencies/tickets.svg',
+    svgSrc: '/assets/currencies/tickets.svg',
   },
 };
 
