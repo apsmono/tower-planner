@@ -1,8 +1,10 @@
-import { useStore } from '../domain/store';
+import { useState } from 'react';
+import { useStore, type Run } from '../domain/store';
 import { CurrencyIcon } from './CurrencyIcon';
 import { 
   Trophy, 
-  TrendingUp
+  TrendingUp,
+  Eye
 } from 'lucide-react';
 import { 
   LineChart, 
@@ -15,9 +17,12 @@ import {
   Legend
 } from 'recharts';
 import { getTournamentRewards } from '../domain/tournamentModel';
+import { RunDetailsModal } from './RunDetailsModal';
 
 export function TournamentHistory() {
   const runs = useStore((state) => state.runs);
+  const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
+  const selectedRun = runs.find((r) => r.id === selectedRunId) || null;
 
   // Filter only tournament runs
   const tournamentRuns = runs
@@ -160,15 +165,23 @@ export function TournamentHistory() {
                       <span>Keys</span>
                     </span>
                   </th>
+                  <th className="p-3 text-center">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-800/60 bg-zinc-950/20">
                 {tournamentRuns.map((run) => {
                   const rewards = getTournamentRewards(run.tournament?.bracket || 'Champion', run.tournament?.rank ?? null);
                   return (
-                    <tr key={run.id} className="hover:bg-zinc-900/20 transition-colors">
-                      <td className="p-3 font-semibold text-white">
-                        {run.battleDate || new Date(run.importedAt).toLocaleDateString()}
+                    <tr 
+                      key={run.id} 
+                      onClick={() => setSelectedRunId(run.id)}
+                      className="hover:bg-zinc-900/40 transition-colors cursor-pointer group"
+                    >
+                      <td className="p-3 font-semibold text-white group-hover:text-cyan-300 transition-colors">
+                        <div className="flex items-center gap-2">
+                          <Eye className="w-3.5 h-3.5 text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          <span>{run.battleDate || new Date(run.importedAt).toLocaleDateString()}</span>
+                        </div>
                       </td>
                       <td className="p-3">
                         <span className="px-2 py-0.5 rounded bg-zinc-900 text-cyan-400 border border-cyan-800/30 text-xs font-semibold">
@@ -204,6 +217,15 @@ export function TournamentHistory() {
                           </span>
                         ) : '-'}
                       </td>
+                      <td className="p-3 text-center" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => setSelectedRunId(run.id)}
+                          className="text-zinc-400 hover:text-cyan-400 hover:bg-zinc-800 p-1.5 rounded-lg transition-colors cursor-pointer"
+                          title="View Run Details"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                      </td>
                     </tr>
                   );
                 })}
@@ -212,6 +234,13 @@ export function TournamentHistory() {
           </div>
         )}
       </div>
+
+      {/* Run Details Modal */}
+      <RunDetailsModal
+        run={selectedRun}
+        isOpen={!!selectedRun}
+        onClose={() => setSelectedRunId(null)}
+      />
     </div>
   );
 }

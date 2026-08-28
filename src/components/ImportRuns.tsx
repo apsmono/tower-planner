@@ -14,15 +14,20 @@ import {
   SlidersHorizontal,
   X,
   RotateCw,
-  Sparkles
+  Sparkles,
+  Eye
 } from 'lucide-react';
 import { CurrencyIcon } from './CurrencyIcon';
+import { RunDetailsModal } from './RunDetailsModal';
 
 export function ImportRuns() {
   const storeRuns = useStore((state) => state.runs);
   const addRuns = useStore((state) => state.addRuns);
   const deleteRun = useStore((state) => state.deleteRun);
   const updateRun = useStore((state) => state.updateRun);
+  
+  const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
+  const selectedRun = storeRuns.find((r) => r.id === selectedRunId) || null;
   
   const [pasteText, setPasteText] = useState('');
   const [previews, setPreviews] = useState<(Omit<Run, 'id' | 'importedAt'> & { key: string })[]>([]);
@@ -771,22 +776,39 @@ export function ImportRuns() {
                   const cellsHr = hours > 0 ? cellsVal / hours : 0;
                   
                   return (
-                    <tr key={run.id} className="hover:bg-zinc-900/20 transition-colors">
-                      <td className="p-3 font-medium text-white">
-                        {run.battleDate || new Date(run.importedAt).toLocaleDateString()}
+                    <tr 
+                      key={run.id} 
+                      onClick={() => setSelectedRunId(run.id)}
+                      className="hover:bg-zinc-900/40 transition-colors cursor-pointer group"
+                    >
+                      <td className="p-3 font-medium text-white group-hover:text-indigo-300 transition-colors">
+                        <div className="flex items-center gap-2">
+                          <Eye className="w-3.5 h-3.5 text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          <span>{run.battleDate || new Date(run.importedAt).toLocaleDateString()}</span>
+                        </div>
                       </td>
-                      <td className="p-3">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                          run.runType === 'tournament' 
-                            ? 'bg-cyan-950 text-cyan-400 border border-cyan-800/30' 
-                            : run.runType === 'milestone' 
-                            ? 'bg-amber-950 text-amber-400 border border-amber-800/30'
-                            : 'bg-zinc-900 text-zinc-400 border border-zinc-700/50'
-                        }`}>
-                          {run.runType === 'tournament' 
-                            ? `Tourney (${run.tournament?.bracket || 'Unknown'})` 
-                            : run.runType}
-                        </span>
+                      <td className="p-3" onClick={(e) => e.stopPropagation()}>
+                        <select
+                          value={run.runType}
+                          onChange={(e) => {
+                            const nextType = e.target.value as 'farm' | 'tournament' | 'milestone';
+                            updateRun(run.id, {
+                              runType: nextType,
+                              tournament: nextType === 'tournament' ? (run.tournament || { bracket: 'Champion', rank: null }) : null
+                            });
+                          }}
+                          className={`px-2 py-0.5 rounded-md text-[11px] font-semibold font-mono border transition-all cursor-pointer focus:outline-none ${
+                            run.runType === 'tournament' 
+                              ? 'bg-cyan-950 text-cyan-300 border-cyan-800/50' 
+                              : run.runType === 'milestone' 
+                              ? 'bg-amber-950 text-amber-300 border-amber-800/50'
+                              : 'bg-zinc-900 text-zinc-300 border-zinc-700/60'
+                          }`}
+                        >
+                          <option value="farm" className="bg-zinc-900 text-zinc-200">🚜 Farm</option>
+                          <option value="tournament" className="bg-zinc-900 text-cyan-300">🏆 Tourney</option>
+                          <option value="milestone" className="bg-zinc-900 text-amber-300">🎯 Milestone</option>
+                        </select>
                       </td>
                       <td className="p-3 font-semibold text-zinc-100">
                         T{run.tier}{run.tierSuffix}
@@ -812,7 +834,7 @@ export function ImportRuns() {
                       <td className="p-3 font-mono text-zinc-400">
                         x{run.dissonanceMultiplier.toFixed(2)}
                       </td>
-                      <td className="p-3 text-center">
+                      <td className="p-3 text-center" onClick={(e) => e.stopPropagation()}>
                         <button
                           onClick={() => updateRun(run.id, { excluded: !run.excluded })}
                           className="focus:outline-none cursor-pointer"
@@ -825,14 +847,23 @@ export function ImportRuns() {
                           )}
                         </button>
                       </td>
-                      <td className="p-3 text-center">
-                        <button
-                          onClick={() => deleteRun(run.id)}
-                          className="text-zinc-500 hover:text-rose-400 transition-colors p-1 cursor-pointer"
-                          title="Delete run"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                      <td className="p-3 text-center" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-center space-x-1">
+                          <button
+                            onClick={() => setSelectedRunId(run.id)}
+                            className="text-zinc-400 hover:text-indigo-400 hover:bg-zinc-800 p-1.5 rounded-lg transition-colors cursor-pointer"
+                            title="View Run Details"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => deleteRun(run.id)}
+                            className="text-zinc-500 hover:text-rose-400 hover:bg-rose-950/30 p-1.5 rounded-lg transition-colors cursor-pointer"
+                            title="Delete run"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -842,6 +873,13 @@ export function ImportRuns() {
           </div>
         )}
       </div>
+
+      {/* Run Details Modal */}
+      <RunDetailsModal
+        run={selectedRun}
+        isOpen={!!selectedRun}
+        onClose={() => setSelectedRunId(null)}
+      />
     </div>
   );
 }

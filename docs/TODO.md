@@ -20,3 +20,20 @@
 
 - [ ] **7. Add module panel**
   - Implement a dedicated module management and planning panel (loadouts, substat reroll targets, shard requirements, and stats breakdown).
+
+- [ ] **8. Modal to change details in research queue**
+  - Add a modal to edit research item details (e.g. level, priority, configurations) directly from within the research queue.
+
+- [ ] **9. Add import function for user account & lifetime stats**
+  - Support importing game stats from `Settings > Stats` (via copy-paste text or screenshot/OCR).
+  - Parse and track user total/lifetime stats and highest wave records for each tier (T1–T23 / max tier).
+
+- [ ] **10. Categorize run logs by run type (Tournament, Event/Mission, Farm, Push/Milestone)**
+  - Add run type tags/categories:
+    - **Tournament Run**: Dedicated tournament attempts and league rankings.
+    - **Event / Mission Run**: Dedicated runs for daily or event mission completion (treat as outliers/noise so they don't skew farm or tournament analytics).
+    - **Farm Run**: Standard coin/cell economy and income farming runs.
+    - **Push / Milestone Run**: Pushing for maximum wave records, tier unlocks, and milestone rewards.
+  - Provide filter and toggle controls to include/exclude specific run categories from charts, hourly rates, and average progression stats.
+
+
