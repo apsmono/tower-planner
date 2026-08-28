@@ -66,7 +66,12 @@ Cleaned up the button text to **"Add to planner"** and fixed the catalog inserti
 
 ### [Walkthrough: Tournament Cards Shadow Glows & Red Sci-Fi Key Icon](./11-three-column-layout-and-tournament-styling.md)
 
-We have updated the Tournament overview cards, glowing shadows, and currency icons according to the game's authentic visual style:
+We have updated the Tournament overview cards, glowing shadows, and currency icons according to the game's authentic visual style.
 
 ---
+
+### [Walkthrough: Stones and Cards Panels, Cell Budget Icon, and UI Cleanup](./12-stones-and-cards-panels-and-ui-cleanup.md)
+
+Added dedicated Power Stones and Cards & Slots panels, updated Cell Budget navigation with authentic cell icon, and disabled the Reference Run & Boost Controls / Unified Mode bar.
+
 
