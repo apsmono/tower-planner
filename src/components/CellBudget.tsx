@@ -115,7 +115,10 @@ export function CellBudget() {
     <div className="space-y-8">
       {/* Page Header */}
       <div>
-        <h2 className="text-2xl font-bold tracking-tight text-white">Cell Budget</h2>
+        <h2 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2.5">
+          <CurrencyIcon currency="cells" size="sm" />
+          <span>Cell Budget</span>
+        </h2>
         <p className="text-zinc-400 text-sm mt-1">
           Balance your daily cell income from runs against lab speed boosts.
         </p>
