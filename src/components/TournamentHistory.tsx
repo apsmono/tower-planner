@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useStore, type Run } from '../domain/store';
+import { useStore } from '../domain/store';
 import { CurrencyIcon } from './CurrencyIcon';
 import { 
   Trophy, 
