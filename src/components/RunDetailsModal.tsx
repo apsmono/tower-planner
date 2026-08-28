@@ -59,7 +59,7 @@ export function RunDetailsModal({
   const [isRawTextExpanded, setIsRawTextExpanded] = useState(true);
 
   // Edit state initialized when run changes
-  const [editRunType, setEditRunType] = useState<'farm' | 'tournament' | 'milestone'>('farm');
+  const [editRunType, setEditRunType] = useState<'farm' | 'tournament' | 'milestone' | 'event'>('farm');
   const [editBracket, setEditBracket] = useState<string>('');
   const [editRank, setEditRank] = useState<number | ''>('');
   const [editDissonance, setEditDissonance] = useState<number>(1.0);
@@ -312,7 +312,7 @@ export function RunDetailsModal({
   };
 
   // Quick switch run type handlers
-  const handleQuickSetRunType = (type: 'farm' | 'tournament' | 'milestone') => {
+  const handleQuickSetRunType = (type: 'farm' | 'tournament' | 'milestone' | 'event') => {
     if (!run) return;
     if (type === 'tournament') {
       updateHandler(run.id, {
@@ -326,6 +326,12 @@ export function RunDetailsModal({
         tournament: null
       });
       setEditRunType('milestone');
+    } else if (type === 'event') {
+      updateHandler(run.id, {
+        runType: 'event',
+        tournament: null
+      });
+      setEditRunType('event');
     } else {
       updateHandler(run.id, {
         runType: 'farm',
@@ -410,6 +416,7 @@ export function RunDetailsModal({
                   <option value="farm" className="bg-zinc-900 text-zinc-100">🚜 Farm Run</option>
                   <option value="tournament" className="bg-zinc-900 text-cyan-300">🏆 Tournament</option>
                   <option value="milestone" className="bg-zinc-900 text-amber-300">🎯 Milestone</option>
+                  <option value="event" className="bg-zinc-900 text-rose-300">🎟️ Event / Mission</option>
                 </select>
               </div>
 
@@ -1144,9 +1151,10 @@ export function RunDetailsModal({
                     onChange={(e) => setEditRunType(e.target.value as any)}
                     className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2 text-xs text-zinc-200 focus:border-indigo-500 focus:outline-none cursor-pointer font-mono"
                   >
-                    <option value="farm">Farm Run</option>
-                    <option value="tournament">Tournament</option>
-                    <option value="milestone">Milestone</option>
+                    <option value="farm">🚜 Farm Run</option>
+                    <option value="tournament">🏆 Tournament</option>
+                    <option value="milestone">🎯 Milestone Push</option>
+                    <option value="event">🎟️ Event / Mission</option>
                   </select>
                 </div>
 

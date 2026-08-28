@@ -7,7 +7,7 @@ import { getBaseLabTime, getLabCoinCost } from '../data/labLevelData';
 export interface Run extends ParsedRun {
   id: string;
   importedAt: string; // ISO string
-  runType: 'farm' | 'tournament' | 'milestone';
+  runType: 'farm' | 'tournament' | 'milestone' | 'event';
   tournament: {
     bracket: string | null;
     rank: number | null;

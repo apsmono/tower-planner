@@ -487,9 +487,10 @@ export function ImportRuns() {
                         onChange={(e) => updatePreview(preview.key, { runType: e.target.value as any })}
                         className="w-full bg-zinc-900 border border-zinc-800 rounded p-1.5 text-xs focus:outline-none focus:border-indigo-500 text-zinc-200"
                       >
-                        <option value="farm">Farm Run</option>
-                        <option value="tournament">Tournament</option>
-                        <option value="milestone">Milestone</option>
+                        <option value="farm">🚜 Farm Run</option>
+                        <option value="tournament">🏆 Tournament</option>
+                        <option value="milestone">🎯 Milestone Push</option>
+                        <option value="event">🎟️ Event / Mission</option>
                       </select>
                     </div>
 
@@ -745,53 +746,39 @@ export function ImportRuns() {
             <table className="w-full text-left text-sm text-zinc-300 min-w-[700px]">
               <thead className="bg-zinc-900/60 text-zinc-400 text-xs font-mono uppercase tracking-wider border-b border-zinc-800">
                 <tr>
-                  <th className="p-3">Run Date / Imported</th>
+                  <th className="p-3">Run Date</th>
                   <th className="p-3">Type</th>
                   <th className="p-3">Tier</th>
                   <th className="p-3">Wave</th>
-                  <th className="p-3">Real Length</th>
-                  <th className="p-3">
-                    <span className="inline-flex items-center gap-1">
-                      <CurrencyIcon currency="coins" size="xs" />
-                      <span>Coins / Hr</span>
-                    </span>
-                  </th>
-                  <th className="p-3">
-                    <span className="inline-flex items-center gap-1">
-                      <CurrencyIcon currency="cells" size="xs" />
-                      <span>Cells / Hr</span>
-                    </span>
-                  </th>
-                  <th className="p-3">Dissonance</th>
-                  <th className="p-3 text-center">Status</th>
-                  <th className="p-3 text-center">Actions</th>
+                  <th className="p-3">Duration</th>
+                  <th className="p-3">Coins Earned</th>
+                  <th className="p-3">Cells Earned</th>
+                  <th className="p-3">Status</th>
+                  <th className="p-3 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-800/60 bg-zinc-950/20">
+              <tbody className="divide-y divide-zinc-850">
                 {processedRuns.map((run) => {
                   const hours = run.realTimeSec / 3600;
-                  const coinsVal = getField(run.fields, 'coinsEarned');
-                  const cellsVal = getField(run.fields, 'cellsEarned');
-                  const coinsHr = hours > 0 ? (coinsVal / run.dissonanceMultiplier) / hours : 0;
-                  const cellsHr = hours > 0 ? cellsVal / hours : 0;
-                  
+                  const coins = getField(run.fields, 'coinsEarned');
+                  const cells = getField(run.fields, 'cellsEarned');
+                  const coinsHr = hours > 0 ? (coins / run.dissonanceMultiplier) / hours : 0;
+                  const cellsHr = hours > 0 ? cells / hours : 0;
+
                   return (
                     <tr 
                       key={run.id} 
                       onClick={() => setSelectedRunId(run.id)}
-                      className="hover:bg-zinc-900/40 transition-colors cursor-pointer group"
+                      className={`hover:bg-zinc-900/40 transition-colors cursor-pointer ${run.excluded ? 'opacity-50' : ''}`}
                     >
-                      <td className="p-3 font-medium text-white group-hover:text-indigo-300 transition-colors">
-                        <div className="flex items-center gap-2">
-                          <Eye className="w-3.5 h-3.5 text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-                          <span>{run.battleDate || new Date(run.importedAt).toLocaleDateString()}</span>
-                        </div>
+                      <td className="p-3 text-zinc-300 font-mono">
+                        {run.battleDate || 'Unknown'}
                       </td>
                       <td className="p-3" onClick={(e) => e.stopPropagation()}>
                         <select
                           value={run.runType}
                           onChange={(e) => {
-                            const nextType = e.target.value as 'farm' | 'tournament' | 'milestone';
+                            const nextType = e.target.value as 'farm' | 'tournament' | 'milestone' | 'event';
                             updateRun(run.id, {
                               runType: nextType,
                               tournament: nextType === 'tournament' ? (run.tournament || { bracket: 'Champion', rank: null }) : null
@@ -802,12 +789,15 @@ export function ImportRuns() {
                               ? 'bg-cyan-950 text-cyan-300 border-cyan-800/50' 
                               : run.runType === 'milestone' 
                               ? 'bg-amber-950 text-amber-300 border-amber-800/50'
+                              : run.runType === 'event'
+                              ? 'bg-rose-950 text-rose-300 border-rose-800/50'
                               : 'bg-zinc-900 text-zinc-300 border-zinc-700/60'
                           }`}
                         >
                           <option value="farm" className="bg-zinc-900 text-zinc-200">🚜 Farm</option>
                           <option value="tournament" className="bg-zinc-900 text-cyan-300">🏆 Tourney</option>
                           <option value="milestone" className="bg-zinc-900 text-amber-300">🎯 Milestone</option>
+                          <option value="event" className="bg-zinc-900 text-rose-300">🎟️ Event</option>
                         </select>
                       </td>
                       <td className="p-3 font-semibold text-zinc-100">

@@ -5,6 +5,7 @@ import { MASTER_LAB_CATALOG, LAB_CATEGORIES, type LabCategory } from '../data/la
 import { LabDatabase } from '../domain/labDatabase';
 import { CurrencyIcon } from './CurrencyIcon';
 import { LabCalculatorModal } from './LabCalculatorModal';
+import { ResearchItemModal } from './ResearchItemModal';
 import { LabCard } from './LabCard';
 import { 
   FlaskConical, 
@@ -17,7 +18,8 @@ import {
   ChevronDown, 
   ChevronUp, 
   Sparkles,
-  Calculator
+  Calculator,
+  Edit3
 } from 'lucide-react';
 
 import { getField } from '../domain/parser';
@@ -59,6 +61,7 @@ export function ResearchQueue() {
   const [labOwnershipFilter, setLabOwnershipFilter] = useState<'all' | 'researched' | 'unresearched'>('all');
   const [showCalculator, setShowCalculator] = useState<boolean>(false);
   const [calculatorLabId, setCalculatorLabId] = useState<string>('wall_thorns');
+  const [editingLabId, setEditingLabId] = useState<string | null>(null);
 
   // Custom Unified conversion rate (coins per cell)
   const farmRuns = runs.filter((r) => r.runType === 'farm' && !r.excluded);
@@ -768,6 +771,15 @@ export function ResearchQueue() {
                           <Pin className={`w-3.5 h-3.5 ${isTask ? 'fill-indigo-500/20' : ''}`} />
                         </button>
                         <span className="truncate">{item.name}</span>
+                        
+                        <button
+                          onClick={() => setEditingLabId(item.id)}
+                          className="p-1 rounded bg-zinc-800/80 hover:bg-zinc-700 text-zinc-400 hover:text-white transition opacity-0 group-hover:opacity-100"
+                          title="Edit lab level & target (Opens Modal)"
+                        >
+                          <Edit3 className="w-3 h-3" />
+                        </button>
+
                         {item.isEstimated && (
                           <span className="px-1.5 py-0.5 rounded bg-zinc-800 text-[9px] text-zinc-500 font-mono uppercase">
                             Est
@@ -857,6 +869,20 @@ export function ResearchQueue() {
         onClose={() => setShowCalculator(false)}
         initialLabId={calculatorLabId}
       />
+
+      {/* Dedicated Research Item Edit Modal (Rule #11) */}
+      {editingLabId && (
+        <ResearchItemModal
+          isOpen={!!editingLabId}
+          onClose={() => setEditingLabId(null)}
+          labId={editingLabId}
+          initialLevel={build.researchCatalog.find(r => r.id === editingLabId)?.level || 0}
+          initialTargetLevel={build.researchCatalog.find(r => r.id === editingLabId)?.targetLevel}
+          onSave={(labId, newLevel, targetLvl) => {
+            updateResearchCatalog(labId, { level: newLevel, targetLevel: targetLvl });
+          }}
+        />
+      )}
     </div>
   );
 }

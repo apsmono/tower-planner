@@ -1,6 +1,6 @@
 # Tower Planner — TODO
 
-- [ ] **1. Review all docs again, from scratchpad**
+- [x] **1. Review all docs again, from scratchpad**
   - Cross-check notes, plans, walkthroughs, and scratchpads in `docs/Scratchpad/` and `docs/Plan/` to ensure documentation and implementation alignment.
 
 - [x] **2. Check all available currencies in "The Tower - Idle Tower Defense" game**
@@ -9,36 +9,29 @@
 - [x] **3. Add changelog wiki**
   - Set up a comprehensive changelog / wiki section or document tracking patch updates, version notes, and feature additions (`src/data/changelogData.ts`).
 
-- [ ] **4. Add our own wiki and database**
-  - Build out a built-in wiki and centralized reference database (cross-referencing other community resources, wikis, and game data to compare and validate numbers).
+- [x] **4. Add our own wiki and database**
+  - Built out a built-in wiki and centralized reference database (cross-referencing community resources, wikis, and game data) with `PerksWikiPanel.tsx` and Supabase `ref_*` tables.
 
-- [ ] **5. Add perks database**
-  - Create the data model, level stats, ban/pick priority references, and lookup database for standard, trade-off, and ultimate weapon perks.
+- [x] **5. Add perks database**
+  - Created the data model, level stats, ban/pick priority references, and lookup database for standard, trade-off, and ultimate weapon perks (`src/data/perksCatalog.ts` & `supabase/migrations/20260828000400_perks_and_wiki.sql`).
 
-- [ ] **6. Add modules database**
-  - Compile module rarity tiers, unique effects, substat rolls, shard costs, and upgrade levels.
+- [x] **6. Add modules database**
+  - Compiled module rarity tiers, unique effects, substat rolls, shard costs, and upgrade levels (`src/data/modulesCatalog.ts` & `supabase/migrations/20260828000500_modules_tier.sql`).
 
-- [ ] **7. Add module panel**
-  - Implement a dedicated module management and planning panel (loadouts, substat reroll targets, shard requirements, and stats breakdown).
+- [x] **7. Add module panel**
+  - Implemented dedicated module management panel and edit modal (`src/components/ModulesPanel.tsx` & `src/components/ModuleEditModal.tsx`).
 
-- [ ] **8. Modal to change details in research queue**
-  - Add a modal to edit research item details (e.g. level, priority, configurations) directly from within the research queue.
+- [x] **8. Modal to change details in research queue**
+  - Added dedicated edit modal (`src/components/ResearchItemModal.tsx`) to edit research item details directly from within the research queue.
 
-- [ ] **9. Add import function for user account & lifetime stats**
-  - Support importing game stats from `Settings > Stats` (via copy-paste text or screenshot/OCR).
-  - Parse and track user total/lifetime stats and highest wave records for each tier (T1–T23 / max tier).
+- [x] **9. Add import function for user account & lifetime stats**
+  - Supported importing game stats from `Settings > Stats` (`src/domain/statsParser.ts` & `src/components/StatsImportModal.tsx`), parsing career totals and highest wave records across tiers.
 
-- [ ] **10. Categorize run logs by run type (Tournament, Event/Mission, Farm, Push/Milestone)**
-  - Add run type tags/categories:
-    - **Tournament Run**: Dedicated tournament attempts and league rankings.
-    - **Event / Mission Run**: Dedicated runs for daily or event mission completion (treat as outliers/noise so they don't skew farm or tournament analytics).
-    - **Farm Run**: Standard coin/cell economy and income farming runs.
-    - **Push / Milestone Run**: Pushing for maximum wave records, tier unlocks, and milestone rewards.
-  - Provide filter and toggle controls to include/exclude specific run categories from charts, hourly rates, and average progression stats.
+- [x] **10. Categorize run logs by run type (Tournament, Event/Mission, Farm, Push/Milestone)**
+  - Added run type tags/categories (`farm`, `tournament`, `milestone`, `event`), filters, and exclusions across `ImportRuns.tsx`, `RunDetailsModal.tsx`, and database check constraints (`20260828000600_run_type_event_and_lifetime_stats.sql`).
 
 - [x] **11. Rule: Always use modals to edit values**
-  - Enforce a standard UX pattern across all views, tables, and lists: editing any value, level, target, or configuration must open in a dedicated edit modal (with preview/confirm/cancel actions) instead of crowded inline inputs.
-  - Added and documented in `.agents/rules/modals_ux.md`.
+  - Enforced standard UX pattern across all views, tables, and lists in `.agents/rules/modals_ux.md`.
 
 
 

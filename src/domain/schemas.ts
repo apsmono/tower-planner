@@ -121,7 +121,7 @@ export const TournamentResultSchema = z.object({
 export const RunSchema = ParsedRunSchema.extend({
   id: z.string().uuid({ message: 'Run ID must be a valid UUID' }),
   importedAt: z.string(),
-  runType: z.enum(['farm', 'tournament', 'milestone']),
+  runType: z.enum(['farm', 'tournament', 'milestone', 'event']),
   tournament: TournamentResultSchema.nullable(),
   dissonanceMultiplier: z.number().positive().default(1.0),
   excluded: z.boolean().default(false),

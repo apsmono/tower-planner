@@ -3,6 +3,7 @@ import { useStore, type LabSlot } from '../domain/store';
 import { CurrencyIcon } from './CurrencyIcon';
 import { StonesPanel } from './StonesPanel';
 import { CardsPanel } from './CardsPanel';
+import { StatsImportModal } from './StatsImportModal';
 import { 
   Sliders, 
   AlertTriangle, 
@@ -13,7 +14,9 @@ import {
   Clock, 
   Trash2, 
   CheckCircle, 
-  CheckCircle2 
+  CheckCircle2,
+  UploadCloud,
+  Trophy
 } from 'lucide-react';
 
 type SubTabId = 'resources' | 'labs' | 'stones' | 'cards' | 'modules' | 'flags' | 'goals';
@@ -42,6 +45,13 @@ export function BuildState() {
   const deleteTask = useStore((state) => state.deleteTask);
 
   const [activeSubTab, setActiveSubTab] = useState<SubTabId>('resources');
+  const [isStatsModalOpen, setIsStatsModalOpen] = useState(false);
+  const [lifetimeTierWaves, setLifetimeTierWaves] = useState<Record<number, number>>({
+    1: 6500,
+    2: 4800,
+    10: 4520,
+    11: 4200,
+  });
 
   // Add Goal form state
   const [newGoalType, setNewGoalType] = useState<'research' | 'resource'>('research');
@@ -63,27 +73,27 @@ export function BuildState() {
         targetAmount: amount,
         notes: newGoalNotes
       });
-      setNewGoalAmount('');
-      setNewGoalNotes('');
     } else {
       const catalogItem = build.researchCatalog.find(r => r.id === newGoalResearchId);
       const level = parseInt(newGoalLevel, 10);
-      if (!catalogItem || !level || level <= 0) return;
+      if (!newGoalResearchId || !level || level <= 0) return;
       addTask({
         type: 'research',
-        name: `${catalogItem.name} to Lv.${level}`,
+        name: `${catalogItem?.name || newGoalResearchId} to Lv.${level}`,
         targetResearchId: newGoalResearchId,
         targetLevel: level,
-        notes: newGoalNotes || `Target level: ${level}`
+        notes: newGoalNotes
       });
-      setNewGoalLevel('');
-      setNewGoalNotes('');
     }
+
+    setNewGoalAmount('');
+    setNewGoalLevel('');
+    setNewGoalNotes('');
   };
 
   const handleResourceChange = (key: keyof typeof build.resources, val: string) => {
-    const num = parseInt(val, 10) || 0;
-    updateResources({ [key]: num });
+    const num = parseInt(val, 10);
+    updateResources({ [key]: isNaN(num) ? 0 : num });
   };
 
   const handleLabChange = (index: number, key: keyof LabSlot, val: any) => {
@@ -105,11 +115,21 @@ export function BuildState() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight text-white">Build State</h2>
-        <p className="text-zinc-400 text-sm mt-1">
-          Configure your current in-game statistics, module levels, and research status.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight text-white">Build State & Career Profile</h2>
+          <p className="text-zinc-400 text-sm mt-1">
+            Configure current resources, lab levels, module loadouts, and imported lifetime career stats.
+          </p>
+        </div>
+
+        <button
+          onClick={() => setIsStatsModalOpen(true)}
+          className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 text-white font-bold text-xs shadow-lg shadow-amber-600/20 transition flex items-center gap-2 self-start sm:self-auto cursor-pointer"
+        >
+          <UploadCloud className="w-4 h-4" />
+          <span>Import Stats (Settings &gt; Stats)</span>
+        </button>
       </div>
 
       {/* Sub Tabs */}
@@ -609,6 +629,66 @@ export function BuildState() {
           </div>
         </div>
       )}
+
+      {/* Career Tier Milestones Card */}
+      <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30">
+              <Trophy className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-white">Tier Milestone Career Records</h3>
+              <p className="text-xs text-slate-400">Highest wave reached per tier (T1 through T23)</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setIsStatsModalOpen(true)}
+            className="text-xs font-semibold text-amber-400 hover:text-amber-300 transition"
+          >
+            Update Stats
+          </button>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2.5">
+          {Array.from({ length: 18 }).map((_, idx) => {
+            const tier = idx + 1;
+            const wave = lifetimeTierWaves[tier];
+            return (
+              <div
+                key={tier}
+                className={`p-3 rounded-xl border text-center transition ${
+                  wave
+                    ? 'bg-slate-950/80 border-indigo-500/30 shadow-sm'
+                    : 'bg-slate-950/30 border-slate-800/60 opacity-60'
+                }`}
+              >
+                <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block">
+                  Tier {tier}
+                </span>
+                <span className="text-xs font-mono font-bold text-white mt-1 block">
+                  {wave ? `${wave.toLocaleString()} w` : '—'}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Stats Import Modal (Rule #11) */}
+      <StatsImportModal
+        isOpen={isStatsModalOpen}
+        onClose={() => setIsStatsModalOpen(false)}
+        onImport={(stats) => {
+          if (stats.tierMaxWaves && Object.keys(stats.tierMaxWaves).length > 0) {
+            setLifetimeTierWaves(prev => ({ ...prev, ...stats.tierMaxWaves }));
+          }
+          if (stats.totalCoins) updateResources({ coins: stats.totalCoins });
+          if (stats.totalGems) updateResources({ gems: stats.totalGems });
+          if (stats.totalStones) updateResources({ stones: stats.totalStones });
+          if (stats.totalCells) updateResources({ cells: stats.totalCells });
+        }}
+      />
     </div>
   );
 }

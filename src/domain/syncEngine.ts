@@ -278,7 +278,7 @@ export async function syncLaneC(userId: string): Promise<void> {
           rawText: r.raw_text || '',
           parserVersion: r.parser_version || 0,
           contentHash: r.content_hash,
-          runType: r.run_type as 'farm' | 'tournament' | 'milestone',
+          runType: r.run_type as 'farm' | 'tournament' | 'milestone' | 'event',
           tournament: null,
           dissonanceMultiplier: Number(r.dissonance_multiplier) || 1.0,
           excluded: r.excluded,
