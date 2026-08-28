@@ -19,9 +19,19 @@ import {
   Layers,
   ChevronLeft,
   ChevronRight,
+  Sparkles,
 } from 'lucide-react';
 
-export type TabId = 'runs' | 'tier-lab' | 'research-queue' | 'cell-budget' | 'stones' | 'cards' | 'build-state' | 'tournament';
+export type TabId = 
+  | 'runs' 
+  | 'tier-lab' 
+  | 'research-queue' 
+  | 'cell-budget' 
+  | 'stones' 
+  | 'cards' 
+  | 'build-state' 
+  | 'tournament'
+  | 'perks-wiki';
 
 interface NavItem {
   id: TabId;
@@ -104,6 +114,7 @@ export function Layout({ activeTab, setActiveTab, children }: LayoutProps) {
     { id: 'cards', name: 'Cards & Slots', icon: Layers, color: 'text-amber-400 hover:text-amber-300' },
     { id: 'build-state', name: 'Build State', icon: Sliders, color: 'text-rose-400 hover:text-rose-300' },
     { id: 'tournament', name: 'Tournament', icon: Trophy, color: 'text-cyan-400 hover:text-cyan-300' },
+    { id: 'perks-wiki', name: 'Wiki & Perks', icon: Sparkles, color: 'text-purple-400 hover:text-purple-300' },
   ];
 
   // Check how many lab slots are occupied / their boosts

@@ -8,6 +8,7 @@ import { StonesPanel } from './components/StonesPanel';
 import { CardsPanel } from './components/CardsPanel';
 import { BuildState } from './components/BuildState';
 import { TournamentHistory } from './components/TournamentHistory';
+import { PerksWikiPanel } from './components/PerksWikiPanel';
 import { syncReferenceData } from './domain/refDataService';
 import { initAuth } from './domain/authService';
 import { initSyncEngine } from './domain/syncEngine';
@@ -58,6 +59,8 @@ function App() {
         return <BuildState />;
       case 'tournament':
         return <TournamentHistory />;
+      case 'perks-wiki':
+        return <PerksWikiPanel />;
       default:
         return <ImportRuns />;
     }
