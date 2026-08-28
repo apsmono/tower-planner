@@ -6,6 +6,7 @@ import { ResearchQueue } from './components/ResearchQueue';
 import { CellBudget } from './components/CellBudget';
 import { StonesPanel } from './components/StonesPanel';
 import { CardsPanel } from './components/CardsPanel';
+import { ModulesPanel } from './components/ModulesPanel';
 import { BuildState } from './components/BuildState';
 import { TournamentHistory } from './components/TournamentHistory';
 import { PerksWikiPanel } from './components/PerksWikiPanel';
@@ -55,6 +56,8 @@ function App() {
         return <StonesPanel />;
       case 'cards':
         return <CardsPanel />;
+      case 'modules':
+        return <ModulesPanel />;
       case 'build-state':
         return <BuildState />;
       case 'tournament':

@@ -29,6 +29,7 @@ export type TabId =
   | 'cell-budget' 
   | 'stones' 
   | 'cards' 
+  | 'modules'
   | 'build-state' 
   | 'tournament'
   | 'perks-wiki';
@@ -112,6 +113,7 @@ export function Layout({ activeTab, setActiveTab, children }: LayoutProps) {
     { id: 'cell-budget', name: 'Cell Budget', currency: 'cells', color: 'text-purple-400 hover:text-purple-300' },
     { id: 'stones', name: 'Power Stones', currency: 'stones', color: 'text-teal-400 hover:text-teal-300' },
     { id: 'cards', name: 'Cards & Slots', icon: Layers, color: 'text-amber-400 hover:text-amber-300' },
+    { id: 'modules', name: 'Modules', icon: Layers, color: 'text-cyan-400 hover:text-cyan-300' },
     { id: 'build-state', name: 'Build State', icon: Sliders, color: 'text-rose-400 hover:text-rose-300' },
     { id: 'tournament', name: 'Tournament', icon: Trophy, color: 'text-cyan-400 hover:text-cyan-300' },
     { id: 'perks-wiki', name: 'Wiki & Perks', icon: Sparkles, color: 'text-purple-400 hover:text-purple-300' },
