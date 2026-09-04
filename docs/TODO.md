@@ -70,3 +70,7 @@
     - Supported optional password setting when linking/upgrading anonymous accounts (`upgradeAccountWithEmail`).
     - Added 8 unit tests in `src/domain/authService.test.ts`.
 
+- [x] **23. Remove Header Adoption Banner for Linked Accounts**
+  - Updated `AuthSyncBanner.tsx` to completely hide the top adoption banner once an account is linked with a permanent email (`user?.isLoggedIn && !user.email.includes('Anonymous')`), preserving clean vertical space.
+
+

@@ -41,12 +41,19 @@ export function AuthSyncBanner({ onOpenAuth }: AuthSyncBannerProps) {
     setIsSyncing(false);
   };
 
-  // Connected state
-  if (user?.isLoggedIn) {
-    const isAnon = user.email.includes('Anonymous');
+  // Fully linked (non-anonymous) user: do not render any adoption/sync banner
+  if (user?.isLoggedIn && !user.email.includes('Anonymous')) {
+    return null;
+  }
+
+  // Connected anonymous session state
+  if (user?.isLoggedIn && user.email.includes('Anonymous')) {
+    if (isBannerDismissed) {
+      return null;
+    }
 
     return (
-      <div className="mb-6 p-3 bg-gradient-to-r from-indigo-950/40 via-zinc-900/60 to-purple-950/40 border border-indigo-500/30 rounded-xl flex flex-wrap items-center justify-between gap-3 shadow-lg shadow-indigo-950/20 animate-fadeIn">
+      <div className="mb-4 p-3 bg-gradient-to-r from-indigo-950/40 via-zinc-900/60 to-purple-950/40 border border-indigo-500/30 rounded-xl flex flex-wrap items-center justify-between gap-3 shadow-lg shadow-indigo-950/20 animate-fadeIn">
         <div className="flex items-center space-x-3">
           <div className="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
             {syncStatus === 'synced' ? (
@@ -60,7 +67,7 @@ export function AuthSyncBanner({ onOpenAuth }: AuthSyncBannerProps) {
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold text-white">
-                {isAnon ? 'Anonymous Cloud Session' : 'Online Cloud Account'}
+                Anonymous Cloud Session
               </span>
               <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded border ${
                 syncStatus === 'synced'
@@ -75,11 +82,7 @@ export function AuthSyncBanner({ onOpenAuth }: AuthSyncBannerProps) {
               </span>
             </div>
             <p className="text-[11px] text-zinc-400">
-              {isAnon ? (
-                <>Device Session • {runs.length} runs backed up (Link email to persist across browser resets)</>
-              ) : (
-                <>{user.email} • {runs.length} runs backed up</>
-              )}
+              Device Session • {runs.length} runs backed up (Link email to persist across browser resets)
             </p>
           </div>
         </div>
@@ -97,7 +100,14 @@ export function AuthSyncBanner({ onOpenAuth }: AuthSyncBannerProps) {
             onClick={() => onOpenAuth('register')}
             className="px-3 py-1.5 bg-indigo-600/80 hover:bg-indigo-600 text-white rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
           >
-            {isAnon ? 'Link Email' : 'Account Details'}
+            Link Email
+          </button>
+          <button
+            onClick={() => setBannerDismissed(true)}
+            className="p-1.5 text-zinc-400 hover:text-white rounded-lg hover:bg-zinc-800/60 transition-colors cursor-pointer"
+            title="Dismiss"
+          >
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
