@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { 
   MASTER_MODULES_CATALOG, 
   MASTER_SUBSTATS_CATALOG, 
@@ -13,20 +13,57 @@ import {
   Unlock, 
   Check, 
   Sliders,
-  Layers
+  Layers,
+  AlertTriangle
 } from 'lucide-react';
 import { CurrencyIcon } from './CurrencyIcon';
+
+export interface SubstatSlotState {
+  substatId: string;
+  rarity: 'rare' | 'epic' | 'legendary' | 'mythic' | 'ancestral';
+}
 
 export interface EquippedModuleState {
   slot: ModuleSlot;
   moduleId: string;
   rarity: ModuleRarity;
   level: number;
-  substats: {
-    substatId: string;
-    rarity: 'rare' | 'epic' | 'legendary' | 'mythic' | 'ancestral';
-  }[];
+  substats: SubstatSlotState[];
   lockedSubstats: string[]; // substat IDs that are locked
+}
+
+/**
+ * Ensures module substats contain no duplicates and fill up to maxSlots with valid slot options.
+ */
+export function sanitizeModuleSubstats(
+  currentSubstats: SubstatSlotState[],
+  slot: ModuleSlot,
+  maxSlots: number
+): SubstatSlotState[] {
+  const slotDefinitions = MASTER_SUBSTATS_CATALOG.filter(s => s.slot === slot);
+  const result: SubstatSlotState[] = [];
+  const seenIds = new Set<string>();
+
+  // 1. Keep valid, non-duplicate substats
+  for (const sub of currentSubstats) {
+    if (result.length >= maxSlots) break;
+    const isValidForSlot = slotDefinitions.some(d => d.id === sub.substatId);
+    if (isValidForSlot && !seenIds.has(sub.substatId)) {
+      result.push({ ...sub });
+      seenIds.add(sub.substatId);
+    }
+  }
+
+  // 2. If slots remain empty, backfill with unused slot substats
+  for (const def of slotDefinitions) {
+    if (result.length >= maxSlots) break;
+    if (!seenIds.has(def.id)) {
+      result.push({ substatId: def.id, rarity: 'epic' });
+      seenIds.add(def.id);
+    }
+  }
+
+  return result;
 }
 
 interface ModuleEditModalProps {
@@ -42,29 +79,51 @@ export function ModuleEditModal({
   initialModule,
   onSave,
 }: ModuleEditModalProps) {
+  const selectedRarityConfig = MODULE_RARITIES.find(r => r.id === initialModule.rarity) || MODULE_RARITIES[1];
+
   const [moduleId, setModuleId] = useState(initialModule.moduleId);
   const [rarity, setRarity] = useState<ModuleRarity>(initialModule.rarity);
   const [level, setLevel] = useState(initialModule.level);
-  const [substats, setSubstats] = useState(initialModule.substats);
+  const [substats, setSubstats] = useState<SubstatSlotState[]>(() =>
+    sanitizeModuleSubstats(initialModule.substats, initialModule.slot, selectedRarityConfig.maxSubstats)
+  );
   const [lockedSubstats, setLockedSubstats] = useState<string[]>(initialModule.lockedSubstats);
 
   if (!isOpen) return null;
 
+  const currentRarityConfig = MODULE_RARITIES.find(r => r.id === rarity) || MODULE_RARITIES[1];
+  const maxSlots = currentRarityConfig.maxSubstats;
   const slotModules = MASTER_MODULES_CATALOG.filter(m => m.slot === initialModule.slot);
   const slotSubstats = MASTER_SUBSTATS_CATALOG.filter(s => s.slot === initialModule.slot);
-  const selectedRarityConfig = MODULE_RARITIES.find(r => r.id === rarity) || MODULE_RARITIES[1];
-  const maxSlots = selectedRarityConfig.maxSubstats;
-
   const selectedModule = slotModules.find(m => m.id === moduleId) || slotModules[0];
 
+  // Active substats up to maxSlots
+  const activeSubstats = substats.slice(0, maxSlots);
+
+  // Check for any duplicate substat IDs across active slots
+  const duplicateSubstatIds = useMemo(() => {
+    const ids = activeSubstats.map(s => s.substatId);
+    return ids.filter((id, index) => ids.indexOf(id) !== index);
+  }, [activeSubstats]);
+
+  const hasDuplicates = duplicateSubstatIds.length > 0;
+
+  const handleRarityChange = (newRarity: ModuleRarity) => {
+    const newConfig = MODULE_RARITIES.find(r => r.id === newRarity) || MODULE_RARITIES[1];
+    setRarity(newRarity);
+    setSubstats(prev => sanitizeModuleSubstats(prev, initialModule.slot, newConfig.maxSubstats));
+  };
+
   const handleSave = () => {
+    if (hasDuplicates) return;
+
     onSave({
       slot: initialModule.slot,
       moduleId,
       rarity,
       level,
-      substats: substats.slice(0, maxSlots),
-      lockedSubstats,
+      substats: activeSubstats,
+      lockedSubstats: lockedSubstats.filter(id => activeSubstats.some(s => s.substatId === id)),
     });
     onClose();
   };
@@ -75,10 +134,26 @@ export function ModuleEditModal({
     );
   };
 
-  const updateSubstat = (index: number, substatId: string, subRarity: 'rare' | 'epic' | 'legendary' | 'mythic' | 'ancestral') => {
+  const updateSubstat = (
+    index: number, 
+    newSubstatId: string, 
+    newRarity: 'rare' | 'epic' | 'legendary' | 'mythic' | 'ancestral'
+  ) => {
+    // Check if newSubstatId is already taken by another active slot
+    const isTakenByOther = activeSubstats.some((s, i) => i !== index && s.substatId === newSubstatId);
+    if (isTakenByOther) {
+      return; // Block duplicate selection
+    }
+
+    const oldSubstatId = substats[index]?.substatId;
     const updated = [...substats];
-    updated[index] = { substatId, rarity: subRarity };
+    updated[index] = { substatId: newSubstatId, rarity: newRarity };
     setSubstats(updated);
+
+    // If changing the substat type, migrate or clear lock from old ID
+    if (oldSubstatId && oldSubstatId !== newSubstatId && lockedSubstats.includes(oldSubstatId)) {
+      setLockedSubstats(prev => prev.map(id => id === oldSubstatId ? newSubstatId : id));
+    }
   };
 
   return (
@@ -100,11 +175,11 @@ export function ModuleEditModal({
                   Configure {initialModule.slot.toUpperCase()} Module
                 </h3>
                 <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-purple-950/80 border border-purple-500/30 text-purple-300">
-                  {selectedRarityConfig.name}
+                  {currentRarityConfig.name}
                 </span>
               </div>
               <p className="text-xs text-slate-400">
-                Adjust module archetype, upgrade level, and fine-tune substat slots.
+                Adjust module archetype, upgrade level, and fine-tune unique substat slots.
               </p>
             </div>
           </div>
@@ -151,11 +226,11 @@ export function ModuleEditModal({
             <div className="space-y-2 bg-slate-950/50 p-4 rounded-xl border border-slate-800">
               <label className="text-xs font-bold text-slate-300 flex items-center justify-between">
                 <span>Rarity Tier</span>
-                <span className="font-mono text-purple-400">{selectedRarityConfig.name}</span>
+                <span className="font-mono text-purple-400">{currentRarityConfig.name}</span>
               </label>
               <select
                 value={rarity}
-                onChange={(e) => setRarity(e.target.value as ModuleRarity)}
+                onChange={(e) => handleRarityChange(e.target.value as ModuleRarity)}
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 text-xs focus:outline-none focus:border-purple-500 font-medium"
               >
                 {MODULE_RARITIES.map((r) => (
@@ -195,16 +270,26 @@ export function ModuleEditModal({
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
                 <CurrencyIcon currency="reroll_shards" size="xs" />
-                Substat Roll Slots ({Math.min(substats.length, maxSlots)}/{maxSlots} Available)
+                Substat Roll Slots ({activeSubstats.length}/{maxSlots} Available)
               </label>
               <span className="text-[11px] text-slate-400">
                 Click lock icon to preserve lines during rerolls
               </span>
             </div>
 
+            {/* Duplicate Substats Blocker Banner */}
+            {hasDuplicates && (
+              <div className="flex items-center gap-2.5 p-3 rounded-xl bg-rose-950/40 border border-rose-500/50 text-rose-300 text-xs">
+                <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+                <span>
+                  <strong>Duplicate Substat Blocked:</strong> Each module can only have one of each substat roll type. Please select unique substats for all active slots.
+                </span>
+              </div>
+            )}
+
             <div className="space-y-2">
               {Array.from({ length: maxSlots }).map((_, index) => {
-                const current = substats[index] || { substatId: slotSubstats[index % slotSubstats.length].id, rarity: 'epic' };
+                const current = activeSubstats[index] || { substatId: slotSubstats[0].id, rarity: 'epic' };
                 const isLocked = lockedSubstats.includes(current.substatId);
                 const substatDef = slotSubstats.find(s => s.id === current.substatId) || slotSubstats[0];
 
@@ -217,16 +302,29 @@ export function ModuleEditModal({
                       <span className="w-5 h-5 rounded-full bg-slate-800 text-slate-400 text-[10px] font-mono flex items-center justify-center font-bold">
                         {index + 1}
                       </span>
+
+                      {/* Substat Dropdown with Duplication Blocker */}
                       <select
                         value={current.substatId}
                         onChange={(e) => updateSubstat(index, e.target.value, current.rarity)}
-                        className="bg-slate-900 border border-slate-700/80 rounded-lg px-2.5 py-1 text-slate-200 text-xs font-medium focus:outline-none focus:border-purple-500"
+                        className="bg-slate-900 border border-slate-700/80 rounded-lg px-2.5 py-1 text-slate-200 text-xs font-medium focus:outline-none focus:border-purple-500 max-w-[220px] sm:max-w-xs truncate"
                       >
-                        {slotSubstats.map(s => (
-                          <option key={s.id} value={s.id}>
-                            {s.name}
-                          </option>
-                        ))}
+                        {slotSubstats.map((s) => {
+                          const isEquippedElsewhere = activeSubstats.some(
+                            (other, otherIdx) => otherIdx !== index && other.substatId === s.id
+                          );
+
+                          return (
+                            <option 
+                              key={s.id} 
+                              value={s.id}
+                              disabled={isEquippedElsewhere}
+                              className={isEquippedElsewhere ? 'text-slate-500 bg-slate-950' : 'text-slate-200 bg-slate-900'}
+                            >
+                              {s.name} {isEquippedElsewhere ? '(Equipped)' : ''}
+                            </option>
+                          );
+                        })}
                       </select>
 
                       <select
@@ -277,7 +375,12 @@ export function ModuleEditModal({
           </button>
           <button
             onClick={handleSave}
-            className="px-5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-lg shadow-purple-600/30 transition flex items-center gap-1.5"
+            disabled={hasDuplicates}
+            className={`px-5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+              hasDuplicates 
+                ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700/50' 
+                : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-lg shadow-purple-600/30'
+            }`}
           >
             <Check className="w-4 h-4" />
             Apply Changes

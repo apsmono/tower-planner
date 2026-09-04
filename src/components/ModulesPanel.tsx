@@ -61,6 +61,7 @@ export function ModulesPanel() {
       substats: [
         { substatId: 'coins_per_kill', rarity: 'ancestral' },
         { substatId: 'package_chance', rarity: 'ancestral' },
+        { substatId: 'package_max_recovery', rarity: 'ancestral' },
         { substatId: 'free_upgrade_chance', rarity: 'ancestral' },
         { substatId: 'enemy_level_skip', rarity: 'mythic' },
       ],

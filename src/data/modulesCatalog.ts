@@ -205,9 +205,13 @@ export const MASTER_SUBSTATS_CATALOG: SubstatDefinition[] = [
   // Cannon Substats
   { id: 'attack_speed', name: 'Attack Speed', slot: 'cannon', unit: '', values: { rare: 1, epic: 2, legendary: 3, mythic: 4, ancestral: 5 } },
   { id: 'crit_factor', name: 'Crit Factor', slot: 'cannon', unit: 'x', values: { rare: 2, epic: 5, legendary: 10, mythic: 15, ancestral: 25 } },
+  { id: 'crit_chance', name: 'Crit Chance', slot: 'cannon', unit: '%', values: { rare: 1, epic: 3, legendary: 5, mythic: 7, ancestral: 10 } },
   { id: 'super_crit_chance', name: 'Super Crit Chance', slot: 'cannon', unit: '%', values: { rare: 1, epic: 3, legendary: 5, mythic: 8, ancestral: 12 } },
+  { id: 'super_crit_mult', name: 'Super Crit Multiplier', slot: 'cannon', unit: 'x', values: { rare: 1, epic: 3, legendary: 6, mythic: 10, ancestral: 18 } },
   { id: 'bounce_shot_targets', name: 'Bounce Shot Targets', slot: 'cannon', unit: '', values: { rare: 1, epic: 1, legendary: 2, mythic: 2, ancestral: 3 } },
+  { id: 'bounce_shot_chance', name: 'Bounce Shot Chance', slot: 'cannon', unit: '%', values: { rare: 2, epic: 4, legendary: 6, mythic: 8, ancestral: 12 } },
   { id: 'attack_range', name: 'Attack Range', slot: 'cannon', unit: 'm', values: { rare: 2, epic: 4, legendary: 6, mythic: 8, ancestral: 12 } },
+  { id: 'multishot_targets', name: 'Multishot Targets', slot: 'cannon', unit: '', values: { rare: 1, epic: 1, legendary: 2, mythic: 2, ancestral: 3 } },
 
   // Armor Substats
   { id: 'defense_percent', name: 'Defense %', slot: 'armor', unit: '%', values: { rare: 1.5, epic: 3.0, legendary: 5.0, mythic: 7.0, ancestral: 9.0 } },
@@ -215,19 +219,30 @@ export const MASTER_SUBSTATS_CATALOG: SubstatDefinition[] = [
   { id: 'wall_health', name: 'Wall Health', slot: 'armor', unit: '%', values: { rare: 10, epic: 25, legendary: 50, mythic: 75, ancestral: 120 } },
   { id: 'wall_rebuild_time', name: 'Wall Rebuild Time', slot: 'armor', unit: 's', values: { rare: -5, epic: -10, legendary: -15, mythic: -20, ancestral: -30 } },
   { id: 'thorns_damage', name: 'Thorns Damage', slot: 'armor', unit: '%', values: { rare: 5, epic: 10, legendary: 15, mythic: 20, ancestral: 30 } },
+  { id: 'orb_count', name: 'Extra Orbs', slot: 'armor', unit: '', values: { rare: 0, epic: 1, legendary: 1, mythic: 2, ancestral: 2 } },
+  { id: 'land_mine_damage', name: 'Land Mine Damage', slot: 'armor', unit: 'x', values: { rare: 2, epic: 5, legendary: 10, mythic: 20, ancestral: 35 } },
+  { id: 'defense_absolute', name: 'Defense Absolute', slot: 'armor', unit: 'x', values: { rare: 1.2, epic: 2.0, legendary: 3.5, mythic: 5.0, ancestral: 8.0 } },
 
   // Generator Substats
   { id: 'coins_per_kill', name: 'Coins / Kill Bonus', slot: 'generator', unit: 'x', values: { rare: 0.2, epic: 0.5, legendary: 1.0, mythic: 1.5, ancestral: 2.5 } },
   { id: 'package_chance', name: 'Recovery Package Chance', slot: 'generator', unit: '%', values: { rare: 2, epic: 4, legendary: 6, mythic: 8, ancestral: 12 } },
+  { id: 'package_max_recovery', name: 'Package Max Recovery', slot: 'generator', unit: 'x', values: { rare: 0.5, epic: 1.0, legendary: 2.0, mythic: 3.0, ancestral: 5.0 } },
   { id: 'free_upgrade_chance', name: 'Free Upgrade Chance', slot: 'generator', unit: '%', values: { rare: 2, epic: 4, legendary: 6, mythic: 8, ancestral: 10 } },
   { id: 'enemy_level_skip', name: 'Enemy Level Skip %', slot: 'generator', unit: '%', values: { rare: 1, epic: 2, legendary: 3, mythic: 5, ancestral: 8 } },
+  { id: 'cash_bonus', name: 'Cash Bonus', slot: 'generator', unit: 'x', values: { rare: 0.5, epic: 1.0, legendary: 2.0, mythic: 3.0, ancestral: 4.5 } },
+  { id: 'orb_speed', name: 'Orb Speed', slot: 'generator', unit: 'x', values: { rare: 0.2, epic: 0.4, legendary: 0.6, mythic: 0.8, ancestral: 1.2 } },
 
   // Core Substats
   { id: 'gt_bonus', name: 'Golden Tower Bonus', slot: 'core', unit: 'x', values: { rare: 1.0, epic: 2.0, legendary: 3.5, mythic: 5.0, ancestral: 8.0 } },
+  { id: 'gt_duration', name: 'Golden Tower Duration', slot: 'core', unit: 's', values: { rare: 1, epic: 2, legendary: 3, mythic: 4, ancestral: 6 } },
   { id: 'bh_size', name: 'Black Hole Size', slot: 'core', unit: 'm', values: { rare: 2, epic: 4, legendary: 6, mythic: 8, ancestral: 12 } },
+  { id: 'bh_duration', name: 'Black Hole Duration', slot: 'core', unit: 's', values: { rare: 1, epic: 2, legendary: 3, mythic: 4, ancestral: 6 } },
   { id: 'sl_angle', name: 'Spotlight Angle', slot: 'core', unit: '°', values: { rare: 2, epic: 5, legendary: 8, mythic: 12, ancestral: 18 } },
+  { id: 'sl_bonus', name: 'Spotlight Bonus', slot: 'core', unit: 'x', values: { rare: 1.5, epic: 3.0, legendary: 5.0, mythic: 8.0, ancestral: 12.0 } },
   { id: 'dw_damage', name: 'Death Wave Damage', slot: 'core', unit: 'x', values: { rare: 2, epic: 5, legendary: 10, mythic: 20, ancestral: 40 } },
+  { id: 'dw_quantity', name: 'Death Wave Quantity', slot: 'core', unit: '', values: { rare: 0, epic: 1, legendary: 1, mythic: 1, ancestral: 2 } },
   { id: 'cf_slow', name: 'Chrono Field Slow %', slot: 'core', unit: '%', values: { rare: 2, epic: 4, legendary: 6, mythic: 8, ancestral: 10 } },
+  { id: 'cl_chance', name: 'Chain Lightning Chance', slot: 'core', unit: '%', values: { rare: 1, epic: 2, legendary: 3, mythic: 5, ancestral: 8 } },
 ];
 
 export const REROLL_SHARDS_COST_PER_ROLL: Record<number, number> = {
