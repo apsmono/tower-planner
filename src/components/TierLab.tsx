@@ -31,8 +31,12 @@ export function TierLab() {
     const hours = run.realTimeSec / 3600;
     const coinsEarned = getField(run.fields, 'coinsEarned');
     const cellsEarned = getField(run.fields, 'cellsEarned');
-    const coinsHr = hours > 0 ? (coinsEarned / run.dissonanceMultiplier) / hours : 0;
-    const cellsHr = hours > 0 ? cellsEarned / hours : 0;
+    const parsedCph = getField(run.fields, 'coinsPerHour');
+    const parsedCeph = getField(run.fields, 'cellsPerHour');
+
+    const rawCoinsHr = parsedCph > 0 ? parsedCph : (hours > 0 ? coinsEarned / hours : 0);
+    const coinsHr = run.dissonanceMultiplier > 0 ? (rawCoinsHr / run.dissonanceMultiplier) : rawCoinsHr;
+    const cellsHr = parsedCeph > 0 ? parsedCeph : (hours > 0 ? cellsEarned / hours : 0);
 
     if (!tiersData[run.tier]) {
       tiersData[run.tier] = { waves: [], coinsHr: [], cellsHr: [], runLengths: [] };

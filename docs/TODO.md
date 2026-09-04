@@ -33,5 +33,40 @@
 - [x] **11. Rule: Always use modals to edit values**
   - Enforced standard UX pattern across all views, tables, and lists in `.agents/rules/modals_ux.md`.
 
+- [x] **12. Import Version Dropdown Defaulting**
+  - Converted version selection into a dropdown populated from changelog versions (`GAME_CHANGELOG`), defaulting to the latest version or the user's previously selected version saved in store (`ImportRuns.tsx` & `store.ts`).
 
+- [x] **13. Auto-fill Dissonance Value on Import**
+  - Automatically populated dissonance multipliers during battle report parsing based on the run's tier from the user's Dissonance Databank and lab scaling (`ImportRuns.tsx`).
+
+- [x] **14. User Dissonance Databank**
+  - Created a dedicated User Dissonance Databank store slice and interactive modal (`DissonanceDatabankModal.tsx` & `store.ts`) for managing tier-by-tier dissonance multipliers.
+
+- [x] **15. Dissonance Lab Integration**
+  - Integrated Dissonance Amplifier lab research (+1.0%/lvl) into `MASTER_LAB_CATALOG` and dynamic effective multiplier calculations (`calculateEffectiveDissonance` & `dissonance.test.ts`).
+
+- [x] **16. Welcome / Onboarding Cover Modal**
+  - Built onboarding greeting modal (`WelcomeModal.tsx`) that greets first-time visitors, explains app features, persists seen state, and can be reopened from the header.
+
+- [x] **17. [Bug] Run History Table Coin Gain Header vs Value**
+  - Fixed header/data mismatch by aligning table headers to `Coins / hr` and `Cells / hr` with currency icons in `ImportRuns.tsx`.
+
+- [x] **18. Remove "Actions" Column Header in Run History Table**
+  - Cleaned up the Run History table header by removing the redundant "Actions" text header in `ImportRuns.tsx`.
+
+- [x] **19. Invert Run History Include/Exclude Toggle Logic & Default**
+  - Changed switch behavior so that "ON" (emerald) means "Included" and "OFF" (zinc) means "Excluded", defaulting imported runs to included (`ImportRuns.tsx`).
+
+- [x] **20. Enhance Theme Toggle (Light/Dark/System) UX**
+  - Enhanced `ThemeToggle.tsx` so clicking directly cycles between theme modes (Light -> Dark -> System), while hovering smoothly reveals explicit dropdown options.
+
+- [x] **21. Move Cloud Icon to Headbar & Show Real-time Sync Status**
+  - Relocated the cloud status indicator from the left sidebar to the top headbar (`Layout.tsx`), dynamically displaying real-time sync states (`Saving...` with spinner, `Synced` with green checkmark, `Offline`, or `Sync Error` with reconnect prompt).
+
+- [x] **22. Updated Auth Scheme & Passwordless / Magic Link Support**
+  - Analyzed and updated the authentication scheme in `authService.ts` and `AuthModal.tsx`:
+    - Added passwordless Magic Link / OTP login (`signInWithOtp`).
+    - Added password reset support (`resetPasswordForEmail`) and in-app password update (`updatePassword`).
+    - Supported optional password setting when linking/upgrading anonymous accounts (`upgradeAccountWithEmail`).
+    - Added 8 unit tests in `src/domain/authService.test.ts`.
 

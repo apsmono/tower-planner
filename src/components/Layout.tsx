@@ -3,8 +3,10 @@ import { useStore } from '../domain/store';
 import { AuthSyncBanner } from './AuthSyncBanner';
 import { AuthModal } from './AuthModal';
 import { ThemeToggle } from './ThemeToggle';
+import { WelcomeModal } from './WelcomeModal';
 import { CurrencyIcon } from './CurrencyIcon';
 import { RightSidebar } from './RightSidebar';
+import { subscribeSyncStatus, type SyncStatus } from '../domain/syncEngine';
 import { 
   History, 
   FlaskConical, 
@@ -12,14 +14,16 @@ import {
   Sliders, 
   Trophy, 
   AlertTriangle,
-  Cloud,
   CloudCheck,
+  CloudOff,
+  RefreshCw,
   LogIn,
   User,
   Layers,
   ChevronLeft,
   ChevronRight,
   Sparkles,
+  HelpCircle,
 } from 'lucide-react';
 
 export type TabId = 
@@ -51,6 +55,18 @@ interface LayoutProps {
 export function Layout({ activeTab, setActiveTab, children }: LayoutProps) {
   const build = useStore((state) => state.build);
   const user = useStore((state) => state.user);
+
+  // Cloud sync status state
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>('synced');
+
+  useEffect(() => {
+    return subscribeSyncStatus((status) => {
+      setSyncStatus(status);
+    });
+  }, []);
+
+  // Welcome cover modal state (opens on every visit)
+  const [isWelcomeOpen, setIsWelcomeOpen] = useState(true);
 
   // Auth modal state
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -134,9 +150,68 @@ export function Layout({ activeTab, setActiveTab, children }: LayoutProps) {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Guide / About Button */}
+          <button
+            onClick={() => setIsWelcomeOpen(true)}
+            className="p-2 rounded-lg bg-zinc-900/60 hover:bg-zinc-800/80 border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-indigo-300 transition-all cursor-pointer"
+            title="App Overview & Guide"
+            aria-label="App Overview & Guide"
+          >
+            <HelpCircle className="w-4 h-4" />
+          </button>
+
           <ThemeToggle />
 
           <div className="w-px h-5 bg-zinc-700/60 mx-1" />
+
+          {/* Cloud Sync Status Indicator in Headbar */}
+          <button
+            onClick={() => handleOpenAuth(user?.isLoggedIn ? 'info' : 'signin')}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all cursor-pointer ${
+              syncStatus === 'syncing'
+                ? 'bg-indigo-950/60 border-indigo-500/50 text-indigo-300 animate-pulse'
+                : syncStatus === 'error'
+                ? 'bg-rose-950/60 border-rose-500/50 text-rose-300 hover:bg-rose-900/50'
+                : syncStatus === 'offline'
+                ? 'bg-zinc-900/60 border-zinc-800 text-zinc-400 hover:border-zinc-700'
+                : 'bg-zinc-900/60 border-zinc-800 hover:border-zinc-700 text-zinc-300 hover:text-white'
+            }`}
+            title={
+              syncStatus === 'syncing'
+                ? 'Saving changes to cloud...'
+                : syncStatus === 'error'
+                ? 'Cloud sync error. Click to reconnect'
+                : syncStatus === 'offline'
+                ? 'Offline mode - changes saved locally'
+                : user?.isLoggedIn
+                ? `Cloud Synced as ${user.email}`
+                : 'Saved locally - Click to enable cloud backup'
+            }
+          >
+            {syncStatus === 'syncing' ? (
+              <>
+                <RefreshCw className="w-3.5 h-3.5 text-indigo-400 animate-spin" />
+                <span className="hidden md:inline text-[11px] text-indigo-300">Saving...</span>
+              </>
+            ) : syncStatus === 'error' ? (
+              <>
+                <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
+                <span className="hidden md:inline text-[11px] text-rose-300">Sync Error</span>
+              </>
+            ) : syncStatus === 'offline' ? (
+              <>
+                <CloudOff className="w-3.5 h-3.5 text-zinc-400" />
+                <span className="hidden md:inline text-[11px] text-zinc-400">Offline</span>
+              </>
+            ) : (
+              <>
+                <CloudCheck className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="hidden md:inline text-[11px] text-emerald-300 font-medium">
+                  {user?.isLoggedIn ? 'Synced' : 'Local'}
+                </span>
+              </>
+            )}
+          </button>
 
           {user?.isLoggedIn ? (
             <button
@@ -144,9 +219,8 @@ export function Layout({ activeTab, setActiveTab, children }: LayoutProps) {
               className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-900/60 hover:bg-zinc-800/80 border border-zinc-800 hover:border-zinc-700 text-xs font-medium text-zinc-300 hover:text-white transition-all cursor-pointer"
               title={`Signed in as ${user.email}`}
             >
-              <User className="w-3.5 h-3.5 text-emerald-400" />
+              <User className="w-3.5 h-3.5 text-indigo-400" />
               <span className="hidden sm:inline max-w-[140px] truncate text-zinc-300">{user.email}</span>
-              <CloudCheck className="w-3.5 h-3.5 text-emerald-400" />
             </button>
           ) : (
             /* Logged-out: Sign In only */
@@ -214,18 +288,9 @@ export function Layout({ activeTab, setActiveTab, children }: LayoutProps) {
               </nav>
             </div>
 
-            {/* Bottom collapsed stats hint */}
+            {/* Bottom collapsed hint */}
             <div className="flex flex-col items-center space-y-2 pb-1">
-              <button
-                onClick={() => handleOpenAuth(user?.isLoggedIn ? 'info' : 'register')}
-                className="p-2 rounded-lg border transition-all cursor-pointer bg-zinc-900/60 hover:bg-zinc-800/80 border-zinc-800 hover:border-zinc-700"
-                title={user?.isLoggedIn ? `Cloud Synced as ${user.email}` : 'Sign in / Register'}
-              >
-                {user?.isLoggedIn
-                  ? <CloudCheck className="w-3.5 h-3.5 text-emerald-400" />
-                  : <Cloud className="w-3.5 h-3.5 text-indigo-400" />
-                }
-              </button>
+              <span className="text-[10px] font-mono text-zinc-600 select-none">v1.0</span>
             </div>
           </aside>
         ) : (
@@ -252,17 +317,6 @@ export function Layout({ activeTab, setActiveTab, children }: LayoutProps) {
                 </div>
 
                 <div className="flex items-center space-x-1.5">
-                  <button
-                    onClick={() => handleOpenAuth(user?.isLoggedIn ? 'info' : 'register')}
-                    className="p-1.5 rounded-lg border transition-all cursor-pointer bg-zinc-900/60 hover:bg-zinc-800/80 border-zinc-800 hover:border-zinc-700"
-                    title={user?.isLoggedIn ? `Cloud Synced as ${user.email}` : 'Sign in / Register'}
-                  >
-                    {user?.isLoggedIn
-                      ? <CloudCheck className="w-3.5 h-3.5 text-emerald-400" />
-                      : <Cloud className="w-3.5 h-3.5 text-indigo-400" />
-                    }
-                  </button>
-
                   <button
                     onClick={() => setIsLeftCollapsed(true)}
                     className="p-1.5 rounded-lg bg-zinc-800/40 hover:bg-zinc-800 border border-zinc-700/50 hover:border-zinc-600 text-zinc-400 hover:text-zinc-200 transition-all cursor-pointer group"
@@ -405,6 +459,12 @@ export function Layout({ activeTab, setActiveTab, children }: LayoutProps) {
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
         initialTab={authModalTab}
+      />
+
+      {/* First-visit Welcome / Onboarding Modal */}
+      <WelcomeModal
+        isOpen={isWelcomeOpen}
+        onClose={() => setIsWelcomeOpen(false)}
       />
     </div>
   );

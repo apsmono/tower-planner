@@ -73,24 +73,34 @@ export function ThemeToggle() {
   const currentOption = options.find((o) => o.id === theme) || options[2];
   const CurrentIcon = currentOption.icon;
 
+  const cycleTheme = () => {
+    if (theme === 'dark') {
+      setTheme('light');
+    } else if (theme === 'light') {
+      setTheme('system');
+    } else {
+      setTheme('dark');
+    }
+  };
+
   return (
     <div 
       className="relative inline-block"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {/* Theme Trigger Button */}
+      {/* Theme Trigger Button (Click to toggle/cycle, Hover to show options) */}
       <button
-        onClick={() => setIsOpen((prev) => !prev)}
+        onClick={cycleTheme}
         aria-haspopup="true"
         aria-expanded={isOpen}
-        aria-label={`Theme selector (current: ${currentOption.label})`}
+        aria-label={`Theme selector (current: ${currentOption.label} - click to toggle, hover for menu)`}
         className={`p-2 rounded-lg border transition-all flex items-center justify-center cursor-pointer ${
           isOpen
             ? 'bg-zinc-800 border-zinc-600 text-white shadow-md'
             : 'bg-zinc-900/60 hover:bg-zinc-800/80 border-zinc-800 hover:border-zinc-700 text-zinc-300 hover:text-white'
         }`}
-        title={`Theme: ${currentOption.label} (Hover for options)`}
+        title={`Theme: ${currentOption.label} (Click to cycle, Hover for options)`}
       >
         <CurrentIcon className="w-4 h-4 text-indigo-400 transition-transform duration-200 hover:scale-110" />
       </button>

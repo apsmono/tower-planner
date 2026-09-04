@@ -122,9 +122,12 @@ export function RunDetailsModal({
   const hours = run ? run.realTimeSec / 3600 : 0;
   const coinsVal = run ? getField(run.fields, 'coinsEarned') : 0;
   const cellsVal = run ? getField(run.fields, 'cellsEarned') : 0;
-  const coinsHrNormalized = (run && hours > 0) ? (coinsVal / run.dissonanceMultiplier) / hours : 0;
-  const coinsHrRaw = (run && hours > 0) ? coinsVal / hours : 0;
-  const cellsHr = (run && hours > 0) ? cellsVal / hours : 0;
+  const parsedCoinsHr = run ? getField(run.fields, 'coinsPerHour') : 0;
+  const parsedCellsHr = run ? getField(run.fields, 'cellsPerHour') : 0;
+
+  const coinsHrRaw = (parsedCoinsHr && parsedCoinsHr > 0) ? parsedCoinsHr : ((run && hours > 0) ? coinsVal / hours : 0);
+  const coinsHrNormalized = (run && run.dissonanceMultiplier > 0) ? (coinsHrRaw / run.dissonanceMultiplier) : coinsHrRaw;
+  const cellsHr = (parsedCellsHr && parsedCellsHr > 0) ? parsedCellsHr : ((run && hours > 0) ? cellsVal / hours : 0);
   const gameSpeed = (run && run.realTimeSec > 0) ? (run.gameTimeSec / run.realTimeSec) : 0;
 
   // Generate complete display raw report text (with fallback reconstruction if rawText was empty)
@@ -516,11 +519,11 @@ export function RunDetailsModal({
             <div className="text-lg font-bold font-mono text-amber-400">
               {formatCompact(coinsVal)}
             </div>
-            <div className="text-[11px] text-zinc-400 font-mono flex items-center gap-1">
-              <span className="text-amber-500 font-semibold">{formatCompact(coinsHrNormalized)}/h</span>
+            <div className="text-[11px] text-zinc-400 font-mono flex flex-wrap items-center gap-1.5">
+              <span className="text-amber-500 font-semibold">{formatCompact(coinsHrRaw)}/h</span>
               {run.dissonanceMultiplier > 1.0 && (
-                <span className="text-[10px] text-zinc-500" title={`Raw rate before dissonance: ${formatCompact(coinsHrRaw)}/h`}>
-                  (norm)
+                <span className="text-[10px] text-zinc-500 font-mono" title={`Dissonance-normalized baseline rate (divided by x${run.dissonanceMultiplier.toFixed(2)})`}>
+                  ({formatCompact(coinsHrNormalized)}/h norm)
                 </span>
               )}
             </div>

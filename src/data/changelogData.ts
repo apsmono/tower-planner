@@ -10,8 +10,61 @@ export interface PatchNote {
 
 export const GAME_CHANGELOG: PatchNote[] = [
   {
+    version: 'v29.0.1',
+    releaseDate: '2026-08-28',
+    title: 'Dissonant Boosts & Balance Hotfix',
+    summary: 'Resolved minor battle calculation issues, balanced Dissonant Echo multipliers, and adjusted workshop level thresholds.',
+    highlights: [
+      'Dissonant Boosts system wave milestone scaling update',
+      'Enhanced Dissonant Echo node perks',
+      'Refined tournament bracket heat conditions',
+      'Stability & performance optimizations',
+    ],
+  },
+  {
+    version: 'v29.0',
+    releaseDate: '2026-08-15',
+    title: 'Dissonant Boosts & Dimension Overhaul',
+    summary: 'Introduced Dissonant Boosts system across Tiers with Dissonant Echo passive enhancements.',
+    highlights: [
+      'Added Dissonant Boosts wave milestones per tier',
+      'Dissonant Echo global attack, defense, coin, and cell multipliers',
+      'New milestone rewards and tournament heat levels',
+    ],
+  },
+  {
+    version: 'v28.0',
+    releaseDate: '2026-06-10',
+    title: 'Relic Room & Card Masteries',
+    summary: 'Expanded Relic Room slots, added Card Mastery bonuses, and refined module substat lock costs.',
+    highlights: [
+      'New Card Mastery tier bonuses',
+      'Relic Room permanent passive stat expansions',
+    ],
+  },
+  {
+    version: 'v27.0',
+    releaseDate: '2026-04-05',
+    title: 'Enhancement Lab Capacitors',
+    summary: 'Added higher tier lab enhancements and expanded workshop damage mitigation.',
+    highlights: [
+      'Workshop enhancement damage & coin multipliers',
+      'Guild league bracket expansions',
+    ],
+  },
+  {
+    version: 'v26.0',
+    releaseDate: '2026-01-20',
+    title: 'Super Tower & Wave Milestone Expansion',
+    summary: 'Unlocked new high wave milestone rewards and balanced enemy Elite modifiers.',
+    highlights: [
+      'High wave milestone rewards expansion',
+      'Elite enemy spawn rate balancing',
+    ],
+  },
+  {
     version: 'v25.0',
-    releaseDate: '2026-07-15',
+    releaseDate: '2025-07-15',
     title: 'Tier 23 & Ultimate Enhancement Expansion',
     summary: 'Unlocked Tier 23 milestone levels, added new Super Tower enhancement scaling, and expanded module substat thresholds.',
     highlights: [

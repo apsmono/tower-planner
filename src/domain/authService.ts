@@ -123,17 +123,78 @@ export async function signUpWithEmailPassword(email: string, password: string, n
   }
 }
 
+function getOrigin(): string {
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return window.location.origin;
+  }
+  return 'http://localhost:3000';
+}
+
 /**
- * Upgrades anonymous user to permanent account via email OTP / Magic Link.
+ * Sign in with Magic Link / Email OTP (passwordless).
+ */
+export async function signInWithOtp(email: string): Promise<{ success: boolean; error?: string }> {
+  if (!isSupabaseConfigured) return { success: false, error: 'Supabase is not configured' };
+  try {
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: getOrigin()
+      }
+    });
+    if (error) throw error;
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message || String(err) };
+  }
+}
+
+/**
+ * Sends a password reset email to the user.
+ */
+export async function resetPasswordForEmail(email: string): Promise<{ success: boolean; error?: string }> {
+  if (!isSupabaseConfigured) return { success: false, error: 'Supabase is not configured' };
+  try {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: getOrigin()
+    });
+    if (error) throw error;
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message || String(err) };
+  }
+}
+
+/**
+ * Updates or sets the password for the current authenticated user.
+ */
+export async function updatePassword(password: string): Promise<{ success: boolean; error?: string }> {
+  if (!isSupabaseConfigured) return { success: false, error: 'Supabase is not configured' };
+  try {
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) throw error;
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message || String(err) };
+  }
+}
+
+/**
+ * Upgrades anonymous user to permanent account via email OTP / Magic Link,
+ * with an optional initial password.
  * Preserves user_id so zero data re-parenting is needed.
  */
-export async function upgradeAccountWithEmail(email: string): Promise<{ success: boolean; error?: string }> {
+export async function upgradeAccountWithEmail(email: string, password?: string): Promise<{ success: boolean; error?: string }> {
   if (!isSupabaseConfigured) {
     return { success: false, error: 'Supabase is not configured' };
   }
 
   try {
-    const { error } = await supabase.auth.updateUser({ email });
+    const attributes: { email: string; password?: string } = { email };
+    if (password && password.trim().length >= 6) {
+      attributes.password = password.trim();
+    }
+    const { error } = await supabase.auth.updateUser(attributes);
     if (error) throw error;
     return { success: true };
   } catch (err: any) {
@@ -152,3 +213,4 @@ export async function signOutUser(): Promise<void> {
     console.warn('Sign out error:', err);
   }
 }
+

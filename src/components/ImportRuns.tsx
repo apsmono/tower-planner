@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useStore, type Run } from '../domain/store';
+import { useStore, type Run, calculateEffectiveDissonance } from '../domain/store';
 import { parseBulkBattleReports, getField, computeContentHash, CURRENT_PARSER_VERSION } from '../domain/parser';
 import { reparseLegacyRuns } from '../domain/syncEngine';
+import { GAME_CHANGELOG } from '../data/changelogData';
 import { 
   Check, 
   AlertCircle, 
@@ -15,19 +16,25 @@ import {
   X,
   RotateCw,
   Sparkles,
-  Eye
+  Eye,
+  Database
 } from 'lucide-react';
 import { CurrencyIcon } from './CurrencyIcon';
 import { RunDetailsModal } from './RunDetailsModal';
+import { DissonanceDatabankModal } from './DissonanceDatabankModal';
 
 export function ImportRuns() {
   const storeRuns = useStore((state) => state.runs);
   const addRuns = useStore((state) => state.addRuns);
   const deleteRun = useStore((state) => state.deleteRun);
   const updateRun = useStore((state) => state.updateRun);
+  const dissonanceDatabank = useStore((state) => state.dissonanceDatabank);
+  const lastSelectedGameVersion = useStore((state) => state.lastSelectedGameVersion);
+  const setLastSelectedGameVersion = useStore((state) => state.setLastSelectedGameVersion);
   
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
   const selectedRun = storeRuns.find((r) => r.id === selectedRunId) || null;
+  const [isDissonanceModalOpen, setIsDissonanceModalOpen] = useState(false);
   
   const [pasteText, setPasteText] = useState('');
   const [previews, setPreviews] = useState<(Omit<Run, 'id' | 'importedAt'> & { key: string })[]>([]);
@@ -112,15 +119,18 @@ export function ImportRuns() {
     .sort((a, b) => {
       // Helper function to get rates
       const getCoinsHr = (r: Run) => {
+        const parsedCph = getField(r.fields, 'coinsPerHour');
         const hours = r.realTimeSec / 3600;
         const coins = getField(r.fields, 'coinsEarned');
-        return hours > 0 ? (coins / r.dissonanceMultiplier) / hours : 0;
+        const rawCph = parsedCph > 0 ? parsedCph : (hours > 0 ? coins / hours : 0);
+        return r.dissonanceMultiplier > 0 ? rawCph / r.dissonanceMultiplier : rawCph;
       };
       
       const getCellsHr = (r: Run) => {
+        const parsedCeph = getField(r.fields, 'cellsPerHour');
         const hours = r.realTimeSec / 3600;
         const cells = getField(r.fields, 'cellsEarned');
-        return hours > 0 ? cells / hours : 0;
+        return parsedCeph > 0 ? parsedCeph : (hours > 0 ? cells / hours : 0);
       };
 
       switch (sortBy) {
@@ -174,18 +184,21 @@ export function ImportRuns() {
     async function parseAndPrepare() {
       try {
         const parsedList = parseBulkBattleReports(pasteText);
+        const defaultVersion = lastSelectedGameVersion || GAME_CHANGELOG[0]?.version || 'v25.0';
+
         const mapped = await Promise.all(parsedList.map(async (parsed, idx) => {
           // Auto classify runType
-          let runType: 'farm' | 'tournament' | 'milestone' = 'farm';
+          let runType: 'farm' | 'tournament' | 'milestone' | 'event' = 'farm';
           if (parsed.tierSuffix === '+') {
             runType = 'tournament';
           } else if (parsed.wave >= 4500) {
             runType = 'farm';
           }
           
-          // Auto exclude if wave < 50
+          // Auto exclude if wave < 50 (crash runs)
           const excluded = parsed.wave < 50;
           const hash = await computeContentHash(parsed.rawText);
+          const autoDissonance = calculateEffectiveDissonance(parsed.tier, dissonanceDatabank);
           
           return {
             key: `${idx}-${Date.now()}`,
@@ -204,10 +217,10 @@ export function ImportRuns() {
             
             runType,
             tournament: runType === 'tournament' ? { bracket: null, rank: null } : null,
-            dissonanceMultiplier: 1.0,
+            dissonanceMultiplier: autoDissonance,
             excluded,
             notes: parsed.wave < 50 ? 'Suspected crash run (wave < 50)' : '',
-            gameVersion: null
+            gameVersion: defaultVersion
           };
         }));
 
@@ -224,7 +237,7 @@ export function ImportRuns() {
     return () => {
       isMounted = false;
     };
-  }, [pasteText, localeOverride]);
+  }, [pasteText, localeOverride, dissonanceDatabank, lastSelectedGameVersion]);
 
   const handleImport = () => {
     const runsToSave: Run[] = previews.map((p) => ({
@@ -399,9 +412,18 @@ export function ImportRuns() {
               Pasting a battle summary will parse it immediately. You can import multiple runs at once by stacking them.
             </p>
             <div className="p-3 bg-zinc-950/40 border border-zinc-800 rounded-lg space-y-2">
-              <span className="text-[10px] text-zinc-500 font-mono uppercase block">Dissonance Explanation</span>
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-zinc-500 font-mono uppercase block">Dissonance Databank</span>
+                <button
+                  onClick={() => setIsDissonanceModalOpen(true)}
+                  className="text-[10px] font-mono text-amber-400 hover:text-amber-300 flex items-center gap-1 cursor-pointer"
+                >
+                  <Database className="w-3 h-3" />
+                  <span>Configure</span>
+                </button>
+              </div>
               <p className="text-[11px] text-zinc-400 leading-normal">
-                Dissonance is a random bonus coin multiplier. For example, a T7 run with <strong>x1.44</strong> bonus should set the dissonance multiplier to 1.44 to normalise rate calculations correctly.
+                Dissonance multipliers auto-fill based on your configured tier rates and lab scaling. Click Configure to edit your databank.
               </p>
             </div>
             {previews.length > 0 && (
@@ -494,9 +516,18 @@ export function ImportRuns() {
                       </select>
                     </div>
 
-                    {/* Dissonance multiplier */}
+                    {/* Dissonance multiplier with databank shortcut */}
                     <div>
-                      <label className="text-[10px] text-zinc-500 font-mono uppercase block mb-1">Dissonance Mult</label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-[10px] text-zinc-500 font-mono uppercase">Dissonance Mult</label>
+                        <button
+                          onClick={() => setIsDissonanceModalOpen(true)}
+                          className="text-[9px] font-mono text-amber-400 hover:text-amber-300 cursor-pointer"
+                          title="Open Dissonance Databank"
+                        >
+                          Databank ↗
+                        </button>
+                      </div>
                       <input
                         type="number"
                         step="0.01"
@@ -507,33 +538,43 @@ export function ImportRuns() {
                       />
                     </div>
 
-                    {/* Excluded Checkbox */}
+                    {/* Excluded / Included Toggle (ON = Included) */}
                     <div>
-                      <label className="text-[10px] text-zinc-500 font-mono uppercase block mb-2">Exclude from aggregates?</label>
+                      <label className="text-[10px] text-zinc-500 font-mono uppercase block mb-2">Include in aggregates?</label>
                       <label className="inline-flex items-center cursor-pointer">
                         <input
                           type="checkbox"
-                          checked={preview.excluded}
-                          onChange={(e) => updatePreview(preview.key, { excluded: e.target.checked })}
+                          checked={!preview.excluded}
+                          onChange={(e) => updatePreview(preview.key, { excluded: !e.target.checked })}
                           className="sr-only peer"
                         />
-                        <div className="relative w-9 h-5 bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-zinc-400 after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-rose-600 peer-checked:after:bg-white"></div>
-                        <span className="ms-2.5 text-xs text-zinc-400 font-medium">
-                          {preview.excluded ? 'Excluded' : 'Included'}
+                        <div className="relative w-9 h-5 bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-zinc-400 after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600 peer-checked:after:bg-white"></div>
+                        <span className="ms-2.5 text-xs font-medium text-zinc-300">
+                          {!preview.excluded ? 'Included' : 'Excluded'}
                         </span>
                       </label>
                     </div>
 
-                    {/* Game Version */}
+                    {/* Game Version Dropdown */}
                     <div>
                       <label className="text-[10px] text-zinc-500 font-mono uppercase block mb-1">Game Version</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. 0.24.4"
-                        value={preview.gameVersion || ''}
-                        onChange={(e) => updatePreview(preview.key, { gameVersion: e.target.value || null })}
-                        className="w-full bg-zinc-900 border border-zinc-800 rounded p-1.5 text-xs focus:outline-none focus:border-indigo-500 text-zinc-200"
-                      />
+                      <select
+                        value={preview.gameVersion || lastSelectedGameVersion || 'v25.0'}
+                        onChange={(e) => {
+                          const ver = e.target.value;
+                          updatePreview(preview.key, { gameVersion: ver });
+                          setLastSelectedGameVersion(ver);
+                        }}
+                        className="w-full bg-zinc-900 border border-zinc-800 rounded p-1.5 text-xs focus:outline-none focus:border-indigo-500 text-zinc-200 cursor-pointer"
+                      >
+                        {GAME_CHANGELOG.map((p) => (
+                          <option key={p.version} value={p.version}>
+                            {p.version} {p.version === GAME_CHANGELOG[0].version ? '(Latest)' : ''}
+                          </option>
+                        ))}
+                        <option value="v21.0">v21.0</option>
+                        <option value="v20.0">v20.0</option>
+                      </select>
                     </div>
 
                     {/* If Tournament, show Bracket and Rank */}
@@ -751,10 +792,11 @@ export function ImportRuns() {
                   <th className="p-3">Tier</th>
                   <th className="p-3">Wave</th>
                   <th className="p-3">Duration</th>
-                  <th className="p-3">Coins Earned</th>
-                  <th className="p-3">Cells Earned</th>
-                  <th className="p-3">Status</th>
-                  <th className="p-3 text-right">Actions</th>
+                  <th className="p-3">Coins / hr</th>
+                  <th className="p-3">Cells / hr</th>
+                  <th className="p-3">Dissonance</th>
+                  <th className="p-3 text-center">Include</th>
+                  <th className="p-3 w-16"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-850">
@@ -762,8 +804,12 @@ export function ImportRuns() {
                   const hours = run.realTimeSec / 3600;
                   const coins = getField(run.fields, 'coinsEarned');
                   const cells = getField(run.fields, 'cellsEarned');
-                  const coinsHr = hours > 0 ? (coins / run.dissonanceMultiplier) / hours : 0;
-                  const cellsHr = hours > 0 ? cells / hours : 0;
+                  const parsedCph = getField(run.fields, 'coinsPerHour');
+                  const parsedCeph = getField(run.fields, 'cellsPerHour');
+
+                  const rawCoinsHr = parsedCph > 0 ? parsedCph : (hours > 0 ? coins / hours : 0);
+                  const coinsHr = run.dissonanceMultiplier > 0 ? (rawCoinsHr / run.dissonanceMultiplier) : rawCoinsHr;
+                  const cellsHr = parsedCeph > 0 ? parsedCeph : (hours > 0 ? cells / hours : 0);
 
                   return (
                     <tr 
@@ -809,11 +855,18 @@ export function ImportRuns() {
                       <td className="p-3 text-zinc-400 font-mono">
                         {formatDuration(run.realTimeSec)}
                       </td>
-                      <td className="p-3 text-amber-500 font-semibold font-mono">
-                        <span className="inline-flex items-center gap-1">
-                          <CurrencyIcon currency="coins" size="xs" />
-                          <span>{formatCompact(coinsHr)}</span>
-                        </span>
+                      <td className="p-3 font-semibold font-mono" title={run.dissonanceMultiplier > 1.0 ? `Actual rate: ${formatCompact(rawCoinsHr)}/hr | Normalized: ${formatCompact(coinsHr)}/hr` : undefined}>
+                        <div className="flex flex-col">
+                          <span className="inline-flex items-center gap-1 text-amber-500">
+                            <CurrencyIcon currency="coins" size="xs" />
+                            <span>{formatCompact(rawCoinsHr)}</span>
+                          </span>
+                          {run.dissonanceMultiplier > 1.0 && (
+                            <span className="text-[10px] font-normal text-zinc-500">
+                              {formatCompact(coinsHr)} norm
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="p-3 text-purple-400 font-semibold font-mono">
                         <span className="inline-flex items-center gap-1">
@@ -828,12 +881,12 @@ export function ImportRuns() {
                         <button
                           onClick={() => updateRun(run.id, { excluded: !run.excluded })}
                           className="focus:outline-none cursor-pointer"
-                          title={run.excluded ? 'Include in analysis' : 'Exclude from analysis'}
+                          title={!run.excluded ? 'Included in aggregates (Click to exclude)' : 'Excluded from aggregates (Click to include)'}
                         >
-                          {run.excluded ? (
-                            <ToggleRight className="w-8 h-8 text-rose-500" />
+                          {!run.excluded ? (
+                            <ToggleRight className="w-8 h-8 text-emerald-500 hover:text-emerald-400 transition-colors" />
                           ) : (
-                            <ToggleLeft className="w-8 h-8 text-zinc-600" />
+                            <ToggleLeft className="w-8 h-8 text-zinc-600 hover:text-zinc-500 transition-colors" />
                           )}
                         </button>
                       </td>
@@ -869,6 +922,12 @@ export function ImportRuns() {
         run={selectedRun}
         isOpen={!!selectedRun}
         onClose={() => setSelectedRunId(null)}
+      />
+
+      {/* Dissonance Databank Modal */}
+      <DissonanceDatabankModal
+        isOpen={isDissonanceModalOpen}
+        onClose={() => setIsDissonanceModalOpen(false)}
       />
     </div>
   );

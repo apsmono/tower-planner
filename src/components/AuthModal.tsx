@@ -2,8 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useStore } from '../domain/store';
 import { 
   signInWithEmailPassword, 
+  signInWithOtp,
   signUpWithEmailPassword, 
   upgradeAccountWithEmail, 
+  resetPasswordForEmail,
+  updatePassword,
   signOutUser,
   initAuth 
 } from '../domain/authService';
@@ -17,11 +20,17 @@ import {
   Laptop, 
   UserPlus, 
   LogIn,
-  RefreshCw,
-  LogOut,
-  Mail,
-  Lock,
-  User
+  RefreshCw, 
+  LogOut, 
+  Mail, 
+  Lock, 
+  User,
+  Sparkles,
+  KeyRound,
+  Send,
+  ChevronDown,
+  ChevronUp,
+  CheckCircle2
 } from 'lucide-react';
 
 interface AuthModalProps {
@@ -36,8 +45,11 @@ export function AuthModal({ isOpen, onClose, initialTab = 'signin' }: AuthModalP
   const build = useStore((state) => state.build);
 
   const [activeTab, setActiveTab] = useState<'signin' | 'register'>(initialTab === 'register' ? 'register' : 'signin');
+  const [signInMode, setSignInMode] = useState<'magic-link' | 'password' | 'forgot-password'>('magic-link');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [showPasswordSection, setShowPasswordSection] = useState(false);
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -65,7 +77,28 @@ export function AuthModal({ isOpen, onClose, initialTab = 'signin' }: AuthModalP
 
   const isAnonymous = user?.email?.includes('Anonymous') || false;
 
-  const handleSignIn = async (e: React.FormEvent) => {
+  const handleMagicLinkSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSuccessMessage(null);
+
+    if (!email || !email.includes('@')) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+
+    setIsLoading(true);
+    const res = await signInWithOtp(email.trim());
+    setIsLoading(false);
+
+    if (res.success) {
+      setSuccessMessage(`Magic login link sent to ${email.trim()}! Check your inbox to sign in instantly.`);
+    } else {
+      setError(res.error || 'Failed to send login link.');
+    }
+  };
+
+  const handlePasswordSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccessMessage(null);
@@ -84,6 +117,27 @@ export function AuthModal({ isOpen, onClose, initialTab = 'signin' }: AuthModalP
       setTimeout(() => onClose(), 1500);
     } else {
       setError(res.error || 'Failed to sign in.');
+    }
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSuccessMessage(null);
+
+    if (!email || !email.includes('@')) {
+      setError('Please enter your email to receive a password reset link.');
+      return;
+    }
+
+    setIsLoading(true);
+    const res = await resetPasswordForEmail(email.trim());
+    setIsLoading(false);
+
+    if (res.success) {
+      setSuccessMessage(`Password reset link sent to ${email.trim()}. Check your email.`);
+    } else {
+      setError(res.error || 'Failed to send password reset link.');
     }
   };
 
@@ -128,14 +182,42 @@ export function AuthModal({ isOpen, onClose, initialTab = 'signin' }: AuthModalP
       return;
     }
 
+    if (password && password.length < 6) {
+      setError('Optional password must be at least 6 characters, or left blank for passwordless Magic Link.');
+      return;
+    }
+
     setIsLoading(true);
-    const res = await upgradeAccountWithEmail(email.trim());
+    const res = await upgradeAccountWithEmail(email.trim(), password || undefined);
     setIsLoading(false);
 
     if (res.success) {
-      setSuccessMessage(`Confirmation sent to ${email.trim()}. Click the link in your email to finalize.`);
+      setSuccessMessage(`Confirmation link sent to ${email.trim()}. Click the link in your email to finalize account linking.`);
     } else {
       setError(res.error || 'Failed to update account email.');
+    }
+  };
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSuccessMessage(null);
+
+    if (!newPassword || newPassword.length < 6) {
+      setError('Password must be at least 6 characters long.');
+      return;
+    }
+
+    setIsLoading(true);
+    const res = await updatePassword(newPassword);
+    setIsLoading(false);
+
+    if (res.success) {
+      setSuccessMessage('Password successfully updated!');
+      setNewPassword('');
+      setShowPasswordSection(false);
+    } else {
+      setError(res.error || 'Failed to update password.');
     }
   };
 
@@ -180,7 +262,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'signin' }: AuthModalP
                 </span>
               </h2>
               <p className="text-xs text-zinc-400">
-                Sync and backup runs, lab timers, and build state
+                Seamless sync and backup for runs, lab timers, and build state
               </p>
             </div>
           </div>
@@ -197,8 +279,8 @@ export function AuthModal({ isOpen, onClose, initialTab = 'signin' }: AuthModalP
         <div className="p-6 overflow-y-auto space-y-4">
           {/* Notifications */}
           {successMessage && (
-            <div className="p-3 bg-emerald-950/40 border border-emerald-500/40 rounded-xl text-xs text-emerald-300 flex items-center gap-2 animate-fadeIn">
-              <CloudCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+            <div className="p-3 bg-emerald-950/40 border border-emerald-500/40 rounded-xl text-xs text-emerald-300 flex items-start gap-2.5 animate-fadeIn">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
               <span>{successMessage}</span>
             </div>
           )}
@@ -243,34 +325,84 @@ export function AuthModal({ isOpen, onClose, initialTab = 'signin' }: AuthModalP
                 </div>
               </div>
 
+              {/* Link Email for Anonymous Sessions */}
               {isAnonymous && (
                 <form onSubmit={handleLinkEmail} className="p-4 bg-indigo-950/20 border border-indigo-900/40 rounded-xl space-y-3">
                   <div className="flex items-center gap-2 text-xs font-semibold text-indigo-300">
                     <Mail className="w-4 h-4" />
-                    <span>Link Your Email</span>
+                    <span>Link Permanent Account</span>
                   </div>
-                  <p className="text-[11px] text-zinc-400">
-                    Attach an email to access your data on another device and protect against browser cache clears.
+                  <p className="text-[11px] text-zinc-400 leading-relaxed">
+                    Attach your email to sync across all your devices. You can log in later passwordlessly with a Magic Link or set a password below.
                   </p>
-                  <div className="flex gap-2">
+                  <div className="space-y-2">
                     <input
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="commander@the-tower.io"
                       required
-                      className="flex-1 px-3 py-2 bg-zinc-950/80 border border-zinc-800 focus:border-indigo-500 rounded-lg text-xs text-white placeholder-zinc-600 outline-none"
+                      className="w-full px-3 py-2 bg-zinc-950/80 border border-zinc-800 focus:border-indigo-500 rounded-lg text-xs text-white placeholder-zinc-600 outline-none"
                     />
-                    <button
-                      type="submit"
-                      disabled={isLoading}
-                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
-                    >
-                      <UserPlus className="w-3.5 h-3.5" />
-                      <span>{isLoading ? 'Sending...' : 'Link'}</span>
-                    </button>
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Optional password (or leave empty for Magic Link login)"
+                      className="w-full px-3 py-2 bg-zinc-950/80 border border-zinc-800 focus:border-indigo-500 rounded-lg text-xs text-white placeholder-zinc-600 outline-none"
+                    />
                   </div>
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs"
+                  >
+                    <UserPlus className="w-3.5 h-3.5" />
+                    <span>{isLoading ? 'Linking...' : 'Link Account & Send Confirmation'}</span>
+                  </button>
                 </form>
+              )}
+
+              {/* Non-anonymous User: Set/Update Password Option */}
+              {!isAnonymous && (
+                <div className="p-3 bg-zinc-950/40 border border-zinc-800/80 rounded-xl">
+                  <button
+                    type="button"
+                    onClick={() => setShowPasswordSection(!showPasswordSection)}
+                    className="w-full flex items-center justify-between text-xs font-medium text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2">
+                      <KeyRound className="w-3.5 h-3.5 text-indigo-400" />
+                      Set / Change Password
+                    </span>
+                    {showPasswordSection ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                  </button>
+
+                  {showPasswordSection && (
+                    <form onSubmit={handleUpdatePassword} className="mt-3 pt-3 border-t border-zinc-800/60 space-y-2">
+                      <p className="text-[11px] text-zinc-400">
+                        Create or update your account password for direct password logins:
+                      </p>
+                      <div className="flex gap-2">
+                        <input
+                          type="password"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          placeholder="New password (min 6 chars)"
+                          required
+                          className="flex-1 px-3 py-1.5 bg-zinc-950/80 border border-zinc-800 focus:border-indigo-500 rounded-lg text-xs text-white placeholder-zinc-600 outline-none"
+                        />
+                        <button
+                          type="submit"
+                          disabled={isLoading}
+                          className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-lg text-xs font-medium cursor-pointer"
+                        >
+                          {isLoading ? 'Saving...' : 'Save'}
+                        </button>
+                      </div>
+                    </form>
+                  )}
+                </div>
               )}
 
               <div className="flex gap-2">
@@ -296,7 +428,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'signin' }: AuthModalP
             <div className="space-y-4 animate-fadeIn">
               <div className="flex border-b border-zinc-800">
                 <button
-                  onClick={() => setActiveTab('signin')}
+                  onClick={() => { setActiveTab('signin'); setError(null); }}
                   className={`flex-1 py-2.5 text-xs font-semibold border-b-2 transition-colors cursor-pointer ${
                     activeTab === 'signin'
                       ? 'border-indigo-500 text-white'
@@ -306,7 +438,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'signin' }: AuthModalP
                   Sign In
                 </button>
                 <button
-                  onClick={() => setActiveTab('register')}
+                  onClick={() => { setActiveTab('register'); setError(null); }}
                   className={`flex-1 py-2.5 text-xs font-semibold border-b-2 transition-colors cursor-pointer ${
                     activeTab === 'register'
                       ? 'border-indigo-500 text-white'
@@ -318,46 +450,162 @@ export function AuthModal({ isOpen, onClose, initialTab = 'signin' }: AuthModalP
               </div>
 
               {activeTab === 'signin' ? (
-                <form onSubmit={handleSignIn} className="space-y-3">
-                  <div>
-                    <label className="block text-[11px] font-medium text-zinc-400 mb-1">Email</label>
-                    <div className="relative">
-                      <Mail className="w-4 h-4 text-zinc-500 absolute left-3 top-2.5" />
-                      <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="commander@the-tower.io"
-                        required
-                        className="w-full pl-9 pr-3 py-2 bg-zinc-950/80 border border-zinc-800 focus:border-indigo-500 rounded-lg text-xs text-white placeholder-zinc-600 outline-none"
-                      />
+                <div className="space-y-3">
+                  {/* Mode Selector within Sign In: Magic Link vs Password vs Forgot Password */}
+                  {signInMode !== 'forgot-password' ? (
+                    <div className="flex p-1 bg-zinc-950/70 border border-zinc-800/80 rounded-lg text-xs">
+                      <button
+                        type="button"
+                        onClick={() => { setSignInMode('magic-link'); setError(null); }}
+                        className={`flex-1 py-1.5 rounded-md font-medium transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                          signInMode === 'magic-link'
+                            ? 'bg-indigo-600 text-white shadow-xs'
+                            : 'text-zinc-400 hover:text-zinc-200'
+                        }`}
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Magic Link (Passwordless)</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setSignInMode('password'); setError(null); }}
+                        className={`flex-1 py-1.5 rounded-md font-medium transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                          signInMode === 'password'
+                            ? 'bg-indigo-600 text-white shadow-xs'
+                            : 'text-zinc-400 hover:text-zinc-200'
+                        }`}
+                      >
+                        <Lock className="w-3.5 h-3.5" />
+                        <span>Password</span>
+                      </button>
                     </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-medium text-zinc-400 mb-1">Password</label>
-                    <div className="relative">
-                      <Lock className="w-4 h-4 text-zinc-500 absolute left-3 top-2.5" />
-                      <input
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="••••••••"
-                        required
-                        className="w-full pl-9 pr-3 py-2 bg-zinc-950/80 border border-zinc-800 focus:border-indigo-500 rounded-lg text-xs text-white placeholder-zinc-600 outline-none"
-                      />
+                  ) : (
+                    <div className="flex items-center justify-between pb-1">
+                      <span className="text-xs font-semibold text-zinc-200">Reset Your Password</span>
+                      <button
+                        type="button"
+                        onClick={() => setSignInMode('password')}
+                        className="text-xs text-indigo-400 hover:underline cursor-pointer"
+                      >
+                        Back to Sign In
+                      </button>
                     </div>
-                  </div>
+                  )}
 
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg shadow-indigo-600/20"
-                  >
-                    <LogIn className="w-4 h-4" />
-                    <span>{isLoading ? 'Signing In...' : 'Sign In & Sync'}</span>
-                  </button>
-                </form>
+                  {signInMode === 'magic-link' && (
+                    <form onSubmit={handleMagicLinkSignIn} className="space-y-3">
+                      <div>
+                        <label className="block text-[11px] font-medium text-zinc-400 mb-1">Email Address</label>
+                        <div className="relative">
+                          <Mail className="w-4 h-4 text-zinc-500 absolute left-3 top-2.5" />
+                          <input
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="commander@the-tower.io"
+                            required
+                            className="w-full pl-9 pr-3 py-2 bg-zinc-950/80 border border-zinc-800 focus:border-indigo-500 rounded-lg text-xs text-white placeholder-zinc-600 outline-none"
+                          />
+                        </div>
+                        <p className="text-[10px] text-zinc-500 mt-1.5">
+                          We will send a one-click login link to your inbox. No password needed.
+                        </p>
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={isLoading}
+                        className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg shadow-indigo-600/20"
+                      >
+                        <Send className="w-3.5 h-3.5" />
+                        <span>{isLoading ? 'Sending Link...' : 'Send Magic Link'}</span>
+                      </button>
+                    </form>
+                  )}
+
+                  {signInMode === 'password' && (
+                    <form onSubmit={handlePasswordSignIn} className="space-y-3">
+                      <div>
+                        <label className="block text-[11px] font-medium text-zinc-400 mb-1">Email Address</label>
+                        <div className="relative">
+                          <Mail className="w-4 h-4 text-zinc-500 absolute left-3 top-2.5" />
+                          <input
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="commander@the-tower.io"
+                            required
+                            className="w-full pl-9 pr-3 py-2 bg-zinc-950/80 border border-zinc-800 focus:border-indigo-500 rounded-lg text-xs text-white placeholder-zinc-600 outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="block text-[11px] font-medium text-zinc-400">Password</label>
+                          <button
+                            type="button"
+                            onClick={() => setSignInMode('forgot-password')}
+                            className="text-[10px] text-indigo-400 hover:text-indigo-300 underline cursor-pointer"
+                          >
+                            Forgot / Set Password?
+                          </button>
+                        </div>
+                        <div className="relative">
+                          <Lock className="w-4 h-4 text-zinc-500 absolute left-3 top-2.5" />
+                          <input
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="••••••••"
+                            required
+                            className="w-full pl-9 pr-3 py-2 bg-zinc-950/80 border border-zinc-800 focus:border-indigo-500 rounded-lg text-xs text-white placeholder-zinc-600 outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={isLoading}
+                        className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg shadow-indigo-600/20"
+                      >
+                        <LogIn className="w-3.5 h-3.5" />
+                        <span>{isLoading ? 'Signing In...' : 'Sign In & Sync'}</span>
+                      </button>
+                    </form>
+                  )}
+
+                  {signInMode === 'forgot-password' && (
+                    <form onSubmit={handleForgotPassword} className="space-y-3">
+                      <div>
+                        <label className="block text-[11px] font-medium text-zinc-400 mb-1">Email Address</label>
+                        <div className="relative">
+                          <Mail className="w-4 h-4 text-zinc-500 absolute left-3 top-2.5" />
+                          <input
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="commander@the-tower.io"
+                            required
+                            className="w-full pl-9 pr-3 py-2 bg-zinc-950/80 border border-zinc-800 focus:border-indigo-500 rounded-lg text-xs text-white placeholder-zinc-600 outline-none"
+                          />
+                        </div>
+                        <p className="text-[10px] text-zinc-500 mt-1.5">
+                          Enter your email to receive a password reset link or set a new password.
+                        </p>
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={isLoading}
+                        className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg shadow-indigo-600/20"
+                      >
+                        <Send className="w-3.5 h-3.5" />
+                        <span>{isLoading ? 'Sending Reset Link...' : 'Send Password Reset Link'}</span>
+                      </button>
+                    </form>
+                  )}
+                </div>
               ) : (
                 <form onSubmit={handleSignUp} className="space-y-3">
                   <div>
@@ -397,7 +645,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'signin' }: AuthModalP
                         type="password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        placeholder="••••••••"
+                        placeholder="•••••••• (min 6 chars)"
                         required
                         className="w-full pl-9 pr-3 py-2 bg-zinc-950/80 border border-zinc-800 focus:border-indigo-500 rounded-lg text-xs text-white placeholder-zinc-600 outline-none"
                       />

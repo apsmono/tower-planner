@@ -297,17 +297,83 @@ export interface UserProfile {
   lastSyncedAt: string | null;
 }
 
+export interface DissonanceTierConfig {
+  tier: number;
+  maxWave: number; // Max wave run for this tier (e.g. 1129)
+  active: boolean;
+  notes?: string;
+}
+
+export interface DissonanceDatabank {
+  tiers: Record<number, DissonanceTierConfig>;
+  echoPercent: number; // Dissonant Echo passive bonus % (default 0.5%)
+  dissonanceLabLevel: number;
+  labMultiplierBonusPerLevel: number; // e.g. 0.01 (+1.0% per level)
+}
+
+export function computeDissonanceFromWave(wave: number, echoPercent = 0.5): number {
+  if (!wave || wave <= 0) return 1.0;
+  const waveBonus = wave / 4000;
+  const echoBonus = (echoPercent || 0) / 100;
+  return Math.round((1.0 + waveBonus + echoBonus + Number.EPSILON) * 100) / 100;
+}
+
+export function calculateEffectiveDissonance(
+  tier: number,
+  databank?: DissonanceDatabank | null,
+  activeLabLevel?: number
+): number {
+  if (!databank || !databank.tiers) return 1.0;
+  const config = databank.tiers[tier];
+  if (!config || config.active === false) return 1.0;
+  
+  const base = computeDissonanceFromWave(config.maxWave || 0, databank.echoPercent ?? 0.5);
+  if (base <= 1.0) return 1.0;
+  
+  const labLevel = activeLabLevel !== undefined ? activeLabLevel : (databank.dissonanceLabLevel || 0);
+  const bonusPerLevel = databank.labMultiplierBonusPerLevel || 0.01;
+  const labBonus = 1 + (labLevel * bonusPerLevel);
+  return Math.round((base * labBonus + Number.EPSILON) * 100) / 100;
+}
+
+export const createInitialDissonanceDatabank = (): DissonanceDatabank => {
+  const tiers: Record<number, DissonanceTierConfig> = {};
+  for (let t = 1; t <= 23; t++) {
+    tiers[t] = {
+      tier: t,
+      maxWave: t === 4 ? 1129 : 0,
+      active: true,
+      notes: t === 4 ? 'Active milestone boost (Wave 1,129)' : ''
+    };
+  }
+  return {
+    tiers,
+    echoPercent: 0.5,
+    dissonanceLabLevel: 0,
+    labMultiplierBonusPerLevel: 0.01
+  };
+};
+
 interface StoreState {
   runs: Run[];
   build: BuildState;
   tasks: PlannerTask[];
   user: UserProfile | null;
   isBannerDismissed: boolean;
+  dissonanceDatabank: DissonanceDatabank;
+  lastSelectedGameVersion: string;
 
   // Auth & Cloud Sync actions
   setUser: (user: UserProfile | null) => void;
   setBannerDismissed: (dismissed: boolean) => void;
   syncCloudData: () => void;
+  
+  // Dissonance Databank actions
+  setTierDissonance: (tier: number, updates: Partial<DissonanceTierConfig>) => void;
+  setEchoPercent: (echoPercent: number) => void;
+  setDissonanceLabLevel: (level: number) => void;
+  setLastSelectedGameVersion: (version: string) => void;
+  resetDissonanceDatabank: () => void;
   
   // Runs actions
   addRun: (run: Run) => void;
@@ -548,6 +614,8 @@ export const useStore = create<StoreState>()(
       tasks: createInitialTasks(),
       user: null,
       isBannerDismissed: false,
+      dissonanceDatabank: createInitialDissonanceDatabank(),
+      lastSelectedGameVersion: 'v29.0.1',
 
       // Auth & Cloud Sync actions
       setUser: (user) => set({ user }),
@@ -555,6 +623,39 @@ export const useStore = create<StoreState>()(
       syncCloudData: () => set((state) => ({
         user: state.user ? { ...state.user, lastSyncedAt: new Date().toISOString() } : null
       })),
+      
+      // Dissonance Databank actions
+      setTierDissonance: (tier, updates) => set((state) => {
+        const currentDatabank = state.dissonanceDatabank || createInitialDissonanceDatabank();
+        const existing = currentDatabank.tiers[tier] || {
+          tier,
+          maxWave: 0,
+          active: true
+        };
+        return {
+          dissonanceDatabank: {
+            ...currentDatabank,
+            tiers: {
+              ...currentDatabank.tiers,
+              [tier]: { ...existing, ...updates }
+            }
+          }
+        };
+      }),
+      setEchoPercent: (echoPercent) => set((state) => ({
+        dissonanceDatabank: {
+          ...(state.dissonanceDatabank || createInitialDissonanceDatabank()),
+          echoPercent
+        }
+      })),
+      setDissonanceLabLevel: (dissonanceLabLevel) => set((state) => ({
+        dissonanceDatabank: {
+          ...(state.dissonanceDatabank || createInitialDissonanceDatabank()),
+          dissonanceLabLevel
+        }
+      })),
+      setLastSelectedGameVersion: (lastSelectedGameVersion) => set({ lastSelectedGameVersion }),
+      resetDissonanceDatabank: () => set({ dissonanceDatabank: createInitialDissonanceDatabank() }),
       
       // Runs actions
       addRun: (run) => {

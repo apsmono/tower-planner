@@ -343,6 +343,16 @@ export const MASTER_LAB_CATALOG: LabDefinition[] = [
     defaultEffectKind: 'multiplier'
   },
   {
+    id: 'dissonance_amplifier',
+    name: 'Dissonance Amplifier',
+    category: 'utility',
+    maxLevel: 50,
+    description: 'Amplifies the coin yield boost received during active Dissonance tier rotations (+1.0% per lab level).',
+    wikiUrl: 'https://the-tower-idle-tower-defense.fandom.com/wiki/Lab_Upgrades',
+    defaultChannel: 'coins.global',
+    defaultEffectKind: 'percent'
+  },
+  {
     id: 'coins_per_wave',
     name: 'Coins / Wave',
     category: 'utility',
